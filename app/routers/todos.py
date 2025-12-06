@@ -2,17 +2,21 @@
 Todo CRUD endpoints.
 All observability is handled automatically by opentelemetry-instrument.
 """
+import logging
 from uuid import UUID
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.config import settings
 from app.database import get_db
 from app.models.todo import Todo
 from app.schemas.todo import TodoCreate, TodoUpdate, TodoResponse
 
 
 router = APIRouter()
+SERVICE_NAME = settings.service_name
+logger = logging.getLogger(SERVICE_NAME)
 
 
 @router.get("/", response_model=List[TodoResponse])
@@ -34,6 +38,10 @@ async def get_todos(
         .limit(limit)
     )
     todos = result.scalars().all()
+    logger.info(
+        "todos listed",
+        extra={"endpoint": "GET /api/v1/todos", "count": len(todos), "skip": skip, "limit": limit},
+    )
     return list(todos)
 
 
@@ -53,11 +61,19 @@ async def get_todo(
     todo = result.scalar_one_or_none()
 
     if todo is None:
+        logger.info(
+            "todo not found",
+            extra={"endpoint": "GET /api/v1/todos/{id}", "todo_id": str(todo_id), "status": 404},
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id {todo_id} not found"
         )
 
+    logger.info(
+        "todo retrieved",
+        extra={"endpoint": "GET /api/v1/todos/{id}", "todo_id": str(todo_id), "status": 200},
+    )
     return todo
 
 
@@ -78,6 +94,15 @@ async def create_todo(
     await db.flush()
     await db.refresh(todo)
 
+    logger.info(
+        "todo created",
+        extra={
+            "endpoint": "POST /api/v1/todos",
+            "todo_id": str(todo.id),
+            "title": todo.title,
+            "status": 201,
+        },
+    )
     return todo
 
 
@@ -101,6 +126,10 @@ async def update_todo(
     todo = result.scalar_one_or_none()
 
     if todo is None:
+        logger.info(
+            "todo not found for update",
+            extra={"endpoint": "PUT /api/v1/todos/{id}", "todo_id": str(todo_id), "status": 404},
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id {todo_id} not found"
@@ -114,6 +143,15 @@ async def update_todo(
     await db.flush()
     await db.refresh(todo)
 
+    logger.info(
+        "todo updated",
+        extra={
+            "endpoint": "PUT /api/v1/todos/{id}",
+            "todo_id": str(todo_id),
+            "updated_fields": list(update_data.keys()),
+            "status": 200,
+        },
+    )
     return todo
 
 
@@ -133,6 +171,10 @@ async def delete_todo(
     todo = result.scalar_one_or_none()
 
     if todo is None:
+        logger.info(
+            "todo not found for delete",
+            extra={"endpoint": "DELETE /api/v1/todos/{id}", "todo_id": str(todo_id), "status": 404},
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id {todo_id} not found"
@@ -140,3 +182,7 @@ async def delete_todo(
 
     await db.delete(todo)
     await db.flush()
+    logger.info(
+        "todo deleted",
+        extra={"endpoint": "DELETE /api/v1/todos/{id}", "todo_id": str(todo_id), "status": 204},
+    )
