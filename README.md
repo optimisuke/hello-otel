@@ -109,6 +109,7 @@ Grafana にアクセス（http://localhost:3000）して：
    rate(http_server_duration_count[5m])
    ```
 4. Span Metrics（トレースから集約されたメトリクス）例:
+
    ```promql
    # ルート別のレイテンシヒストグラム
    sum by (http_method, http_route, http_status_code, le) (rate(spanmetrics_latency_bucket[5m]))
@@ -387,15 +388,3 @@ OTEL-LGTM はローカル開発用です。本番では：
 - [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/python/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [uv Documentation](https://github.com/astral-sh/uv)
-
-## 📄 ライセンス
-
-MIT License
-
-## 🤝 コントリビューション
-
-Pull Requests を歓迎します！
-
----
-
-**シンプルで完全な観測性を実現！** 🎉
