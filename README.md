@@ -224,7 +224,8 @@ hello-otel/
 ├── Dockerfile               # uv対応
 ├── pyproject.toml           # uv依存関係
 ├── .env.example             # 環境変数テンプレート
-├── otel-collector-spanmetrics.yaml # spanmetrics 用 OTEL Collector 設定
+├── collector.yaml           # spanmetrics 用 OTEL Collector 設定
+├── grafana-dashboard-todo.json # Todo API用 Grafana Dashboard (importして利用)
 └── README.md
 ```
 

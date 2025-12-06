@@ -9,8 +9,11 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
       - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://collector:4318/v1/logs
       - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=todo-api
       - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=development
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
       - OTEL_LOGS_EXPORTER=otlp,console
       - OTEL_PYTHON_LOG_CORRELATION=true
       - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
@@ -52,6 +55,9 @@ services:
       - "4318:4318" # OTLP HTTP
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana-dashboard-todo.json:/otel-lgtm/grafana/conf/provisioning/dashboards/todo.json:ro
+      - ./grafana/provisioning/dashboards/todo.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/todo.yaml:ro
     networks:
       - observability
 

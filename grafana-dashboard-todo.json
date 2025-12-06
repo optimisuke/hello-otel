@@ -1,0 +1,409 @@
+{
+  "id": null,
+  "uid": "todo-api-overview",
+  "title": "Todo API Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "type": "datasource",
+        "name": "ds",
+        "label": "Datasource",
+        "query": "prometheus",
+        "current": {
+          "selected": true,
+          "text": "prometheus",
+          "value": "prometheus"
+        }
+      },
+      {
+        "name": "route",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "query": "label_values(traces_spanmetrics_latency_count, http_route)",
+        "includeAll": true,
+        "refresh": 2,
+        "allValue": ".*",
+        "multi": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Request Rate (rps)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(traces_spanmetrics_latency_count[1m])) or vector(0)",
+          "legendFormat": "rps"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "gauge",
+      "title": "Error Rate (%)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(traces_spanmetrics_latency_count{http_status_code!~\"2..\"}[5m])) / sum(rate(traces_spanmetrics_latency_count[5m])) or vector(0)",
+          "legendFormat": "error%"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "displayMode": "lcd",
+        "min": 0,
+        "max": 100,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {
+              "color": "green",
+              "value": null
+            },
+            {
+              "color": "orange",
+              "value": 1
+            },
+            {
+              "color": "red",
+              "value": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "p95 Latency (ms)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket[5m]))) * 1000 or vector(0)",
+          "legendFormat": "p95"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "milliseconds"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "p99 Latency (ms)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket[5m]))) * 1000 or vector(0)",
+          "legendFormat": "p99"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "milliseconds"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Latency Histogram (by route)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, http_route, http_method) (rate(traces_spanmetrics_latency_bucket{http_route=~\"$route\"}[5m]))) or vector(0)",
+          "legendFormat": "{{http_method}} {{http_route}} p95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, http_route, http_method) (rate(traces_spanmetrics_latency_bucket{http_route=~\"$route\"}[5m]))) or vector(0)",
+          "legendFormat": "{{http_method}} {{http_route}} p50"
+        }
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1,
+      "stack": false,
+      "nullPointMode": "null",
+      "legend": {
+        "show": true
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Requests by Route (5m)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (http_method, http_route, http_status_code) (rate(traces_spanmetrics_latency_count{http_route=~\"$route\"}[5m])) or vector(0)",
+          "legendFormat": "{{http_method}} {{http_route}} {{http_status_code}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Errors by Status",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (http_status_code) (rate(traces_spanmetrics_latency_count{http_status_code!~\"2..\"}[5m])) or vector(0)",
+          "legendFormat": "{{http_status_code}}"
+        }
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "stack": false,
+      "nullPointMode": "null",
+      "legend": {
+        "show": true
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Request Rate by Route",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (http_method, http_route) (rate(traces_spanmetrics_latency_count{http_route=~\"$route\"}[5m])) or vector(0)",
+          "legendFormat": "{{http_method}} {{http_route}}"
+        }
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "stack": false,
+      "nullPointMode": "null",
+      "legend": {
+        "show": true
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Requests by Status (stacked)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (http_status_code) (rate(traces_spanmetrics_latency_count[5m])) or vector(0)",
+          "legendFormat": "{{http_status_code}}"
+        }
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "stack": true,
+      "nullPointMode": "null",
+      "legend": {
+        "show": true
+      }
+    },
+    {
+      "type": "table",
+      "title": "Top Routes by RPS (5m)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (http_method, http_route) (rate(traces_spanmetrics_latency_count[5m])))",
+          "legendFormat": "{{http_method}} {{http_route}}"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "__name__": true
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    }
+  ]
+}
