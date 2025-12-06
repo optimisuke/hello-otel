@@ -1,59 +1,44 @@
-# Todo API with OpenTelemetry & LGTM Stack
+# Todo API with OpenTelemetry & Grafana OTEL-LGTM
 
-OpenTelemetry、Grafana、Tempo、Loki、Prometheus を使用した、完全な観測性を備えた FastAPI Todo アプリケーションです。
+最もシンプルな構成で完全な観測性を実現した FastAPI Todo アプリケーション。
 
-## 📋 目次
+## ✨ 特徴
 
-- [機能](#機能)
-- [技術スタック](#技術スタック)
-- [前提条件](#前提条件)
-- [クイックスタート](#クイックスタート)
-- [プロジェクト構造](#プロジェクト構造)
-- [API 仕様](#api仕様)
-- [観測性](#観測性)
-- [開発ガイド](#開発ガイド)
-- [トラブルシューティング](#トラブルシューティング)
-
-## ✨ 機能
-
-- ✅ Todo 項目の CRUD 操作（作成・取得・更新・削除）
-- 📊 完全な観測性（トレース、メトリクス、ログ）
-- 🎯 OpenTelemetry 自動計装
-- 📈 Grafana ダッシュボード
-- 🗄️ PostgreSQL データベース
-- 🐳 Docker Compose による簡単セットアップ
-- 🔍 分散トレーシング（Tempo）
-- 📝 ログ集約（Loki）
-- 📉 メトリクス収集（Prometheus）
+- 🚀 **わずか 3 サービス** - app, postgres, lgtm（統合観測基盤）
+- 🎯 **設定ファイル不要** - docker-compose.yml のみ
+- 📊 **完全な観測性** - トレース + ログ + メトリクス
+- 🧹 **クリーンコード** - アプリに観測性コードゼロ
+- ⚡ **すぐ使える** - 起動後即座に Grafana で確認可能
+- 🔧 **uv 管理** - 高速な依存関係管理
 
 ## 🛠 技術スタック
 
 ### アプリケーション
 
-- **FastAPI** 0.109.0 - 高速 Python ウェブフレームワーク
-- **SQLAlchemy** 2.0.25 - ORM
-- **PostgreSQL** 16 - データベース
-- **Pydantic** 2.5.3 - データバリデーション
-- **Alembic** 1.13.1 - データベースマイグレーション
+- **FastAPI** - Python ウェブフレームワーク
+- **SQLAlchemy** - ORM
+- **PostgreSQL** - データベース
+- **uv** - Python 依存関係管理
+- **Alembic** - データベースマイグレーション
 
-### 観測性（LGTM Stack）
+### 観測性（LGTM 統合）
 
-- **Loki** 2.9.3 - ログ集約
-- **Grafana** 10.2.3 - 可視化ダッシュボード
-- **Tempo** 2.3.1 - 分散トレーシング
-- **Prometheus** 2.48.1 - メトリクス収集
+- **Grafana OTEL-LGTM** - オールインワン観測基盤
+  - OpenTelemetry Collector
+  - Tempo（トレース）
+  - Loki（ログ）
+  - Mimir（メトリクス）
+  - Grafana（可視化）
 
-### OpenTelemetry
+### 自動計装
 
-- **OpenTelemetry SDK** 1.22.0
-- **OpenTelemetry Collector** 0.91.0
-- 自動計装: FastAPI、SQLAlchemy
+- **opentelemetry-instrument** - コマンドライン自動計装
+- コード変更不要の完全自動化
 
 ## 📦 前提条件
 
 - Docker Desktop 4.0+
 - Docker Compose 2.0+
-- (オプション) Python 3.11+ - ローカル開発用
 
 ## 🚀 クイックスタート
 
@@ -64,7 +49,7 @@ git clone <repository-url>
 cd hello-otel
 ```
 
-### 2. 環境変数の設定
+### 2. 環境変数の設定（オプション）
 
 ```bash
 cp .env.example .env
@@ -83,113 +68,51 @@ docker-compose up -d
 docker-compose exec app alembic upgrade head
 ```
 
-### 5. 動作確認
+### 5. アクセス
 
-#### API ドキュメント
+| サービス     | URL                        | 説明                   |
+| ------------ | -------------------------- | ---------------------- |
+| **API**      | http://localhost:8000      | FastAPI エンドポイント |
+| **API Docs** | http://localhost:8000/docs | Swagger UI             |
+| **Grafana**  | http://localhost:3000      | 統合ダッシュボード     |
 
-http://localhost:8000/docs
-
-#### Grafana ダッシュボード
-
-http://localhost:3000
+**Grafana 初回ログイン**
 
 - ユーザー名: `admin`
 - パスワード: `admin`
 
-#### その他のサービス
+## 📊 観測性の確認
 
-- **Tempo**: http://localhost:3200
-- **Loki**: http://localhost:3100
-- **Prometheus**: http://localhost:9090
+Grafana にアクセス（http://localhost:3000）して：
 
-## 📁 プロジェクト構造
+### トレースの確認
 
-```
-hello-otel/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                     # FastAPIアプリケーション
-│   ├── config.py                   # 設定管理
-│   ├── database.py                 # DB接続
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── todo.py                 # SQLAlchemyモデル
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── todo.py                 # Pydanticスキーマ
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   └── todos.py                # Todoエンドポイント
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── todo_service.py         # ビジネスロジック
-│   └── observability/
-│       ├── __init__.py
-│       ├── tracing.py              # トレース設定
-│       ├── metrics.py              # メトリクス設定
-│       └── logging.py              # ログ設定
-├── alembic/                        # DBマイグレーション
-├── grafana/
-│   ├── datasources/
-│   │   └── datasources.yml         # データソース設定
-│   └── dashboards/
-│       └── todo-dashboard.json     # ダッシュボード定義
-├── otel-collector/
-│   └── config.yaml                 # Collector設定
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-├── .env.example
-└── README.md
-```
+1. **Explore** をクリック
+2. データソース: **Tempo** を選択
+3. **Search** タブでトレースを検索
+4. リクエストのフローを確認
 
-## 🔌 API 仕様
+### ログの確認
 
-### ベース URL
+1. **Explore** をクリック
+2. データソース: **Loki** を選択
+3. LogQL クエリ: `{service_name="todo-api"}`
+4. trace_id でフィルタリング可能
 
-```
-http://localhost:8000/api/v1
-```
+### メトリクスの確認
 
-### エンドポイント
+1. **Explore** をクリック
+2. データソース: **Mimir** を選択
+3. PromQL クエリ例:
+   ```promql
+   rate(http_server_duration_count[5m])
+   ```
 
-#### 1. 全 Todo 取得
+## 🔌 API 使用例
+
+### Todo 作成
 
 ```bash
-GET /todos
-
-# リクエスト例
-curl http://localhost:8000/api/v1/todos
-
-# レスポンス例
-[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "Buy groceries",
-    "description": "Milk, bread, eggs",
-    "completed": false,
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T10:30:00Z"
-  }
-]
-```
-
-#### 2. Todo 取得（ID 指定）
-
-```bash
-GET /todos/{todo_id}
-
-# リクエスト例
-curl http://localhost:8000/api/v1/todos/550e8400-e29b-41d4-a716-446655440000
-```
-
-#### 3. Todo 作成
-
-```bash
-POST /todos
-Content-Type: application/json
-
-# リクエスト例
 curl -X POST http://localhost:8000/api/v1/todos \
   -H "Content-Type: application/json" \
   -d '{
@@ -197,170 +120,73 @@ curl -X POST http://localhost:8000/api/v1/todos \
     "description": "Milk, bread, eggs",
     "completed": false
   }'
-
-# レスポンス例
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "Buy groceries",
-  "description": "Milk, bread, eggs",
-  "completed": false,
-  "created_at": "2024-01-15T10:30:00Z",
-  "updated_at": "2024-01-15T10:30:00Z"
-}
 ```
 
-#### 4. Todo 更新
+### Todo 一覧取得
 
 ```bash
-PUT /todos/{todo_id}
-Content-Type: application/json
+curl http://localhost:8000/api/v1/todos
+```
 
-# リクエスト例
-curl -X PUT http://localhost:8000/api/v1/todos/550e8400-e29b-41d4-a716-446655440000 \
+### 特定の Todo 取得
+
+```bash
+curl http://localhost:8000/api/v1/todos/{todo_id}
+```
+
+### Todo 更新
+
+```bash
+curl -X PUT http://localhost:8000/api/v1/todos/{todo_id} \
   -H "Content-Type: application/json" \
-  -d '{
-    "completed": true
-  }'
+  -d '{"completed": true}'
 ```
 
-#### 5. Todo 削除
+### Todo 削除
 
 ```bash
-DELETE /todos/{todo_id}
-
-# リクエスト例
-curl -X DELETE http://localhost:8000/api/v1/todos/550e8400-e29b-41d4-a716-446655440000
+curl -X DELETE http://localhost:8000/api/v1/todos/{todo_id}
 ```
 
-#### 6. ヘルスチェック
+### ヘルスチェック
 
 ```bash
-GET /health
-
-# レスポンス例
-{
-  "status": "healthy",
-  "database": "connected"
-}
+curl http://localhost:8000/health
 ```
 
-#### 7. メトリクス
+## 💻 ローカル開発
+
+### uv のインストール
 
 ```bash
-GET /metrics
-
-# Prometheus形式のメトリクスを返却
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## 📊 観測性
-
-### トレース（Traces）
-
-**Tempo で確認:**
-
-1. Grafana にアクセス: http://localhost:3000
-2. 左メニュー > Explore
-3. データソース: Tempo
-4. Search タブでトレースを検索
-
-**確認できる情報:**
-
-- リクエストの全体フロー
-- 各処理のレイテンシー
-- データベースクエリの実行時間
-- エラースタックトレース
-
-### メトリクス（Metrics）
-
-**Prometheus で確認:**
-http://localhost:9090
-
-**主要メトリクス:**
-
-- `http_server_requests_total` - HTTP リクエスト総数
-- `http_server_duration_seconds` - リクエストレイテンシー
-- `todos_total` - Todo 総数
-- `todos_completed_ratio` - 完了率
-- `db_query_duration_seconds` - DB クエリ時間
-
-**Grafana ダッシュボード:**
-
-- リクエストレート
-- レスポンスタイム（p50, p95, p99）
-- エラーレート
-- Todo 統計
-
-### ログ（Logs）
-
-**Loki で確認:**
-
-1. Grafana にアクセス
-2. 左メニュー > Explore
-3. データソース: Loki
-4. LogQL クエリで検索
-
-**ログクエリ例:**
-
-```logql
-# エラーログのみ
-{job="todo-api"} |= "ERROR"
-
-# 特定のTrace IDに関連するログ
-{job="todo-api"} |= "trace_id=abc123"
-
-# 特定エンドポイントのログ
-{job="todo-api"} | json | endpoint="/api/v1/todos"
-```
-
-### 相関分析
-
-トレース、メトリクス、ログは相互に関連付けられています:
-
-1. **トレースからログへ:**
-
-   - Tempo でトレース表示時、`Logs for this span`ボタンクリック
-   - 自動的に Loki で関連ログを表示
-
-2. **ログからトレースへ:**
-
-   - Loki のログに含まれる trace_id をクリック
-   - 自動的に Tempo でトレースを表示
-
-3. **メトリクスからトレースへ:**
-   - Prometheus グラフで異常値をクリック
-   - Exemplar からトレースにジャンプ
-
-## 💻 開発ガイド
-
-### ローカル開発セットアップ
+### 依存関係のインストール
 
 ```bash
-# 仮想環境作成
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 依存関係インストール
-pip install -r requirements.txt
-
-# 環境変数設定
-export DATABASE_URL="postgresql+asyncpg://todouser:todopass@localhost:5432/tododb"
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
-
-# データベースのみDocker起動
-docker-compose up -d postgres otel-collector tempo loki prometheus grafana
-
-# マイグレーション実行
-alembic upgrade head
-
-# アプリケーション起動
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv sync
 ```
 
-### 新しいマイグレーションの作成
+### 開発サーバー起動
 
 ```bash
-# マイグレーションファイル生成
-docker-compose exec app alembic revision --autogenerate -m "Add new column"
+# 通常起動
+uv run uvicorn app.main:app --reload
+
+# OpenTelemetry自動計装付き
+uv run opentelemetry-instrument \
+  --traces_exporter otlp \
+  --metrics_exporter otlp \
+  --logs_exporter otlp \
+  uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### データベースマイグレーション
+
+```bash
+# 新しいマイグレーション作成
+docker-compose exec app alembic revision --autogenerate -m "description"
 
 # マイグレーション適用
 docker-compose exec app alembic upgrade head
@@ -369,39 +195,34 @@ docker-compose exec app alembic upgrade head
 docker-compose exec app alembic downgrade -1
 ```
 
-### テスト実行
+## 📁 プロジェクト構造
 
-```bash
-# ユニットテスト
-docker-compose exec app pytest tests/
-
-# 統合テスト
-docker-compose exec app pytest tests/integration/
-
-# カバレッジ
-docker-compose exec app pytest --cov=app tests/
 ```
-
-### ログ確認
-
-```bash
-# 全サービスのログ
-docker-compose logs -f
-
-# 特定サービスのログ
-docker-compose logs -f app
-docker-compose logs -f postgres
-docker-compose logs -f otel-collector
+hello-otel/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPIアプリ（クリーンコード）
+│   ├── config.py            # 設定管理
+│   ├── database.py          # DB接続
+│   ├── models/
+│   │   └── todo.py          # SQLAlchemyモデル
+│   ├── schemas/
+│   │   └── todo.py          # Pydanticスキーマ
+│   └── routers/
+│       └── todos.py         # CRUDエンドポイント
+├── alembic/                 # DBマイグレーション
+├── docker-compose.yml       # 3サービス構成
+├── Dockerfile               # uv対応
+├── pyproject.toml           # uv依存関係
+├── .env.example             # 環境変数テンプレート
+└── README.md
 ```
 
 ## 🐛 トラブルシューティング
 
-### 問題: アプリケーションが起動しない
+### アプリケーションが起動しない
 
 ```bash
-# コンテナの状態確認
-docker-compose ps
-
 # ログ確認
 docker-compose logs app
 
@@ -409,72 +230,46 @@ docker-compose logs app
 docker-compose restart app
 ```
 
-### 問題: データベース接続エラー
+### トレースが表示されない
 
 ```bash
-# PostgreSQLの状態確認
+# 環境変数確認
+docker-compose exec app env | grep OTEL
+
+# LGTMの状態確認
+docker-compose logs lgtm
+
+# アプリ再起動
+docker-compose restart app
+```
+
+### Grafana にアクセスできない
+
+```bash
+# LGTMコンテナの状態
+docker-compose ps lgtm
+
+# LGTMログ確認
+docker-compose logs lgtm
+
+# 再起動
+docker-compose restart lgtm
+```
+
+### データベース接続エラー
+
+```bash
+# PostgreSQL状態確認
 docker-compose ps postgres
 
-# データベースログ確認
+# データベースログ
 docker-compose logs postgres
 
-# データベース再起動
-docker-compose restart postgres
+# ヘルスチェック
+docker-compose exec postgres pg_isready -U todouser
 ```
 
-### 問題: トレースが Tempo に表示されない
-
-1. OTel Collector のログ確認:
-
-```bash
-docker-compose logs otel-collector
-```
-
-2. Collector のエンドポイント確認:
-
-```bash
-curl http://localhost:4317
-```
-
-3. アプリケーションの環境変数確認:
-
-```bash
-docker-compose exec app env | grep OTEL
-```
-
-### 問題: Grafana でデータソースに接続できない
-
-1. Grafana 再起動:
-
-```bash
-docker-compose restart grafana
-```
-
-2. データソース設定確認:
-
-   - Grafana > Configuration > Data sources
-   - 各データソースの接続テスト実行
-
-3. ネットワーク確認:
-
-```bash
-docker-compose exec grafana ping tempo
-docker-compose exec grafana ping loki
-docker-compose exec grafana ping prometheus
-```
-
-### 問題: ポート競合
-
-```bash
-# 使用中のポート確認
-lsof -i :8000  # macOS/Linux
-netstat -ano | findstr :8000  # Windows
-
-# docker-compose.ymlでポート変更
-# 例: "8001:8000"
-```
-
-### 全サービスのリセット
+### 完全リセット
 
 ```bash
 # 全コンテナ停止・削除
@@ -483,17 +278,113 @@ docker-compose down
 # ボリューム含めて削除
 docker-compose down -v
 
-# イメージも削除
-docker-compose down --rmi all
-
 # 再構築
 docker-compose up -d --build
 ```
 
+## 📖 詳細ドキュメント
+
+- [`FINAL_ARCHITECTURE_V2.md`](FINAL_ARCHITECTURE_V2.md) - 最終アーキテクチャ設計
+- [`MIMIR_GUIDE.md`](MIMIR_GUIDE.md) - Mimir vs Prometheus 比較
+- [`OBSERVABILITY_GUIDE.md`](OBSERVABILITY_GUIDE.md) - OpenTelemetry 技術ガイド
+- [`BEST_PRACTICES.md`](BEST_PRACTICES.md) - コーディング規約
+
+## 🎯 自動取得されるテレメトリ
+
+### トレース
+
+- HTTP リクエスト（メソッド、パス、ステータスコード）
+- SQL クエリ（クエリ文、パラメータ、実行時間）
+- エラー情報（スタックトレース）
+
+### ログ
+
+- アプリケーションログ（標準出力）
+- trace_id、span_id の自動付与
+- エラーログ
+
+### メトリクス
+
+- `http.server.duration` - リクエスト処理時間
+- `http.server.active_requests` - アクティブリクエスト数
+- `db.client.connections.usage` - DB 接続プール使用状況
+
+## 🔧 開発コマンド
+
+```bash
+# コンテナ起動
+docker-compose up -d
+
+# ログ監視
+docker-compose logs -f app
+
+# シェル接続
+docker-compose exec app /bin/bash
+
+# Python依存関係追加
+uv add <package-name>
+
+# 依存関係同期
+uv sync
+
+# テスト実行（今後追加）
+uv run pytest
+```
+
+## 🌟 重要なポイント
+
+### ✅ アプリケーションコードはクリーン
+
+[`app/main.py`](app/main.py)には観測性のコードが**一切ありません**：
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(title="Todo API")
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+# OpenTelemetryのimportなし！
+# スパン作成なし！
+# メトリクス記録なし！
+```
+
+すべて`opentelemetry-instrument`コマンドが自動で行います。
+
+### 🎯 Grafana OTEL-LGTM の利点
+
+1. **設定ファイル不要** - すぐ使える
+2. **データソース自動設定** - 手動設定不要
+3. **1 コンテナで完結** - リソース効率的
+4. **開発に最適** - 本番移行も容易
+
+## 🚀 本番環境への移行
+
+OTEL-LGTM はローカル開発用です。本番では：
+
+- **Grafana Cloud** - マネージドサービス推奨
+- **個別デプロイ** - Tempo、Loki、Mimir を分離
+- **Kubernetes** - オペレーターで自動スケーリング
+
+**重要**: アプリケーションコードは変更不要！環境変数のみ変更。
+
 ## 📚 参考資料
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Grafana OTEL-LGTM](https://hub.docker.com/r/grafana/otel-lgtm)
 - [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/python/)
-- [Grafana Documentation](https://grafana.com/docs/)
-- [Tempo Documentation](https://grafana.com/docs/tempo/)
-- [Loki Documentation](https://grafana.com/docs
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [uv Documentation](https://github.com/astral-sh/uv)
+
+## 📄 ライセンス
+
+MIT License
+
+## 🤝 コントリビューション
+
+Pull Requests を歓迎します！
+
+---
+
+**シンプルで完全な観測性を実現！** 🎉

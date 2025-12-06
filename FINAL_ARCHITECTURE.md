@@ -1,54 +1,88 @@
-# 最終アーキテクチャ（最もシンプル＆標準的）
+# 最終アーキテクチャ（Grafana OTEL-LGTM 採用）
 
-## 設計原則
+## 🎯 設計方針の変更
 
-1. ✅ **アプリコードは完全にクリーン** - import 不要、コード変更ゼロ
-2. ✅ **`opentelemetry-instrument`コマンド** - 完全自動計装
-3. ✅ **uv で Python 管理** - pyproject.toml + uv.lock
-4. ✅ **OpenTelemetry Collector** - 標準的で拡張性が高い
-5. ✅ **完全な LGTM Stack** - Loki + Grafana + Tempo + Mimir
+**重要な発見**: Grafana 公式が提供する **`grafana/otel-lgtm`** イメージを採用することで、構成を劇的にシンプル化！
 
-## システム構成（6 サービス）
+### Before（当初の設計）
+
+```
+7サービス: app, postgres, otel-collector, tempo, loki, prometheus, grafana
+```
+
+### After（最終設計）✅
+
+```
+3サービス: app, postgres, lgtm (all-in-one)
+```
+
+## システム構成
 
 ```mermaid
 graph TB
-    Client[クライアント] --> FastAPI[FastAPI アプリ<br/>コード変更なし]
+    Client[クライアント] --> FastAPI[FastAPI アプリ<br/>コード変更ゼロ]
     FastAPI --> PostgreSQL[(PostgreSQL)]
 
-    FastAPI -->|OTLP gRPC| Collector[OpenTelemetry<br/>Collector]
+    FastAPI -->|OTLP gRPC| LGTM[Grafana OTEL-LGTM<br/>統合イメージ]
 
-    Collector -->|トレース| Tempo[Tempo]
-    Collector -->|ログ| Loki[Loki]
-    Collector -->|メトリクス| Mimir[Mimir]
+    subgraph "LGTM (1コンテナ)"
+        OTel[OpenTelemetry<br/>Collector]
+        Tempo[Tempo]
+        Loki[Loki]
+        Mimir[Mimir]
+        Grafana[Grafana]
 
-    Tempo --> Grafana[Grafana]
-    Loki --> Grafana
-    Mimir --> Grafana
+        OTel --> Tempo
+        OTel --> Loki
+        OTel --> Mimir
+
+        Tempo --> Grafana
+        Loki --> Grafana
+        Mimir --> Grafana
+    end
 
     User[ユーザー] --> Grafana
 ```
 
-## サービス一覧
+## サービス一覧（3 つのみ！）
 
-| サービス       | ポート     | 役割           | イメージ                             |
-| -------------- | ---------- | -------------- | ------------------------------------ |
-| app            | 8000       | FastAPI アプリ | python:3.11-slim                     |
-| postgres       | 5432       | データベース   | postgres:16-alpine                   |
-| otel-collector | 4317, 4318 | テレメトリ収集 | otel/opentelemetry-collector-contrib |
-| tempo          | 3200       | トレース保存   | grafana/tempo                        |
-| loki           | 3100       | ログ保存       | grafana/loki                         |
-| mimir          | 9009       | メトリクス保存 | grafana/mimir                        |
-| grafana        | 3000       | 可視化         | grafana/grafana                      |
+| サービス | ポート           | 役割             | イメージ              |
+| -------- | ---------------- | ---------------- | --------------------- |
+| app      | 8000             | FastAPI アプリ   | python:3.11-slim + uv |
+| postgres | 5432             | データベース     | postgres:16-alpine    |
+| **lgtm** | 3000, 4317, 4318 | **統合観測基盤** | **grafana/otel-lgtm** |
 
-## プロジェクト構造（最小限）
+## Grafana OTEL-LGTM の特徴
+
+### 含まれるコンポーネント
+
+- ✅ **OpenTelemetry Collector** - テレメトリ収集
+- ✅ **Tempo** - トレース保存
+- ✅ **Loki** - ログ保存
+- ✅ **Mimir** - メトリクス保存
+- ✅ **Grafana** - 統合 UI
+
+### メリット
+
+1. **極めてシンプル** - 設定ファイル不要
+2. **自動統合** - データソースが事前設定済み
+3. **開発に最適** - すぐに使える
+4. **リソース効率** - 1 コンテナで完結
+
+### 公式情報
+
+- Docker Hub: https://hub.docker.com/r/grafana/otel-lgtm
+- 用途: ローカル開発・デモ・学習
+
+## プロジェクト構造（簡略化）
 
 ```
 hello-otel/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # 純粋なFastAPIコード（import不要）
-│   ├── config.py            # 環境変数
-│   ├── database.py          # DB接続
+│   ├── main.py              # クリーンなFastAPIコード
+│   ├── config.py
+│   ├── database.py
 │   ├── models/
 │   │   └── todo.py
 │   ├── schemas/
@@ -57,104 +91,115 @@ hello-otel/
 │       └── todos.py
 ├── alembic/
 │   └── versions/
-├── grafana/
-│   ├── datasources/
-│   │   └── datasources.yml
-│   └── dashboards/
-│       └── lgtm-dashboard.json
-├── otel-collector/
-│   └── config.yaml          # Collector設定
-├── docker-compose.yml
+├── docker-compose.yml       # 3サービスのみ
 ├── Dockerfile
-├── pyproject.toml           # uv管理
-├── uv.lock
-├── alembic.ini
+├── pyproject.toml
 ├── .env.example
 └── README.md
 ```
 
-## Python 依存関係管理（uv）
+## Docker Compose 設定（最終版）
 
-### pyproject.toml
+```yaml
+version: "3.8"
 
-```toml
-[project]
-name = "hello-otel"
-version = "0.1.0"
-description = "Todo API with OpenTelemetry and LGTM Stack"
-requires-python = ">=3.11"
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://todouser:todopass@postgres:5432/tododb
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://lgtm:4317
+      - OTEL_SERVICE_NAME=todo-api
+    depends_on:
+      - postgres
+      - lgtm
 
-dependencies = [
-    # FastAPI
-    "fastapi>=0.109.0",
-    "uvicorn[standard]>=0.27.0",
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: todouser
+      POSTGRES_PASSWORD: todopass
+      POSTGRES_DB: tododb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_/var/lib/postgresql/data
 
-    # Database
-    "sqlalchemy>=2.0.25",
-    "asyncpg>=0.29.0",
-    "alembic>=1.13.1",
-    "psycopg2-binary>=2.9.9",
-
-    # OpenTelemetry - 自動計装パッケージ
-    "opentelemetry-distro>=0.43b0",
-    "opentelemetry-instrumentation>=0.43b0",
-    "opentelemetry-exporter-otlp>=1.22.0",
-
-    # Validation
-    "pydantic>=2.5.3",
-    "pydantic-settings>=2.1.0",
-    "python-dotenv>=1.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "httpx>=0.25.0",
-]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.uv]
-dev-dependencies = [
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-]
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000" # Grafana UI
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
 ```
 
-### uv コマンド
+**これだけ！** 設定ファイル不要！
+
+## 環境変数（.env）
 
 ```bash
-# プロジェクト初期化
-uv init
+# Database
+DATABASE_URL=postgresql+asyncpg://todouser:todopass@postgres:5432/tododb
 
-# 依存関係インストール
-uv sync
+# OpenTelemetry（自動計装用）
+OTEL_EXPORTER_OTLP_ENDPOINT=http://lgtm:4317
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+OTEL_SERVICE_NAME=todo-api
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment=development
 
-# 実行
-uv run uvicorn app.main:app --reload
+# OpenTelemetry Exporters
+OTEL_TRACES_EXPORTER=otlp
+OTEL_METRICS_EXPORTER=otlp
+OTEL_LOGS_EXPORTER=otlp
 
-# OpenTelemetry自動計装で実行
-uv run opentelemetry-instrument uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Python Auto-Instrumentation
+OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+```
+
+## Dockerfile（uv 対応）
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Install dependencies
+COPY pyproject.toml ./
+RUN uv pip install --system -r pyproject.toml
+
+# Copy application
+COPY . .
+
+EXPOSE 8000
+
+# Run with OpenTelemetry auto-instrumentation
+CMD ["opentelemetry-instrument", \
+     "--traces_exporter", "otlp", \
+     "--metrics_exporter", "otlp", \
+     "--logs_exporter", "otlp", \
+     "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ## main.py（完全にクリーン）
 
 ```python
 """
-Todo API - OpenTelemetry自動計装版
-コードに観測性の設定は一切なし！
+Todo API with Zero-Code Observability
+opentelemetry-instrumentコマンドが全自動で計装
 """
 from fastapi import FastAPI
 from app.routers import todos
-from app.database import engine
 
-# 純粋なFastAPIアプリケーション
 app = FastAPI(
     title="Todo API",
-    description="Simple Todo API with Zero-Code Observability",
+    description="Simple Todo API with Automatic Observability",
     version="0.1.0"
 )
 
@@ -167,234 +212,156 @@ app.include_router(
 
 @app.get("/")
 async def root():
-    return {"message": "Todo API with OpenTelemetry"}
+    return {"message": "Todo API with OTEL-LGTM"}
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-# 観測性の設定は一切なし！
-# opentelemetry-instrumentコマンドが全て自動で行う
+# 観測性コードは一切なし！
 ```
 
-## Dockerfile（uv 対応）
+## クイックスタート
 
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# uvのインストール
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# 依存関係ファイルコピー
-COPY pyproject.toml uv.lock ./
-
-# 依存関係インストール
-RUN uv sync --frozen --no-dev
-
-# アプリケーションコピー
-COPY . .
-
-# OpenTelemetry自動計装で起動
-CMD ["uv", "run", "opentelemetry-instrument", \
-     "--traces_exporter", "otlp", \
-     "--metrics_exporter", "otlp", \
-     "--logs_exporter", "otlp", \
-     "--service_name", "todo-api", \
-     "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-## 環境変数（.env）
+### 1. 起動
 
 ```bash
-# Database
-DATABASE_URL=postgresql+asyncpg://todouser:todopass@postgres:5432/tododb
+# コンテナ起動
+docker-compose up -d
 
-# OpenTelemetry（自動計装用）
-OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-OTEL_SERVICE_NAME=todo-api
-OTEL_RESOURCE_ATTRIBUTES=deployment.environment=development
-
-# 自動計装の詳細設定
-OTEL_TRACES_EXPORTER=otlp
-OTEL_METRICS_EXPORTER=otlp
-OTEL_LOGS_EXPORTER=otlp
-OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
-
-# FastAPIの自動計装設定
-OTEL_PYTHON_FASTAPI_EXCLUDED_URLS=/health,/metrics
-
-# Application
-APP_HOST=0.0.0.0
-APP_PORT=8000
-LOG_LEVEL=INFO
+# データベースマイグレーション
+docker-compose exec app alembic upgrade head
 ```
 
-## OpenTelemetry Collector 設定
+### 2. アクセス
 
-```yaml
-# otel-collector/config.yaml
-receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
+| サービス    | URL                        | 用途                   |
+| ----------- | -------------------------- | ---------------------- |
+| API         | http://localhost:8000      | FastAPI                |
+| API Docs    | http://localhost:8000/docs | Swagger UI             |
+| **Grafana** | **http://localhost:3000**  | **統合ダッシュボード** |
 
-processors:
-  batch:
-    timeout: 10s
-    send_batch_size: 1024
+**Grafana ログイン**
 
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 512
+- ユーザー: `admin`
+- パスワード: `admin`
 
-  resource:
-    attributes:
-      - key: service.namespace
-        value: todo-app
-        action: upsert
+### 3. 観測性の確認
 
-exporters:
-  # トレース → Tempo
-  otlp/tempo:
-    endpoint: tempo:4317
-    tls:
-      insecure: true
+Grafana（http://localhost:3000）にアクセス：
 
-  # ログ → Loki
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-    labels:
-      resource:
-        service.name: "service_name"
-      attributes:
-        level: "level"
+1. **Explore** → **Tempo** → トレース検索
+2. **Explore** → **Loki** → ログ検索
+3. **Explore** → **Mimir** → メトリクス確認
 
-  # メトリクス → Mimir
-  otlphttp/mimir:
-    endpoint: http://mimir:9009/otlp
-    tls:
-      insecure: true
+すべてのデータソースが自動設定済み！
 
-  # デバッグ用
-  logging:
-    loglevel: info
+## 自動取得されるテレメトリ
 
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [otlp/tempo, logging]
+### トレース
 
-    metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [otlphttp/mimir, logging]
+- HTTP リクエスト（メソッド、パス、ステータス）
+- SQL クエリ（クエリ文、実行時間）
+- エラー（スタックトレース）
 
-    logs:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [loki, logging]
+### ログ
+
+- アプリケーションログ
+- trace_id/span_id 自動付与
+- エラーログ
+
+### メトリクス
+
+- `http.server.duration` - リクエストレイテンシー
+- `http.server.active_requests` - アクティブリクエスト
+- `db.client.connections.usage` - DB 接続
+
+## 開発コマンド
+
+```bash
+# ローカル開発
+uv run uvicorn app.main:app --reload
+
+# OpenTelemetry自動計装で実行
+uv run opentelemetry-instrument uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# マイグレーション作成
+docker-compose exec app alembic revision --autogenerate -m "description"
+
+# マイグレーション実行
+docker-compose exec app alembic upgrade head
+
+# ログ確認
+docker-compose logs -f app
+docker-compose logs -f lgtm
 ```
 
-## Docker Compose（完全版）
+## トラブルシューティング
 
-```yaml
-version: "3.8"
+### トレースが表示されない
 
-services:
-  # FastAPI アプリケーション
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://todouser:todopass@postgres:5432/tododb
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_SERVICE_NAME=todo-api
-    depends_on:
-      - postgres
-      - otel-collector
-    networks:
-      - lgtm
+```bash
+# アプリのログ確認
+docker-compose logs app
 
-  # PostgreSQL
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: todouser
-      POSTGRES_PASSWORD: todopass
-      POSTGRES_DB: tododb
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - lgtm
+# LGTMの状態確認
+docker-compose logs lgtm
 
-  # OpenTelemetry Collector
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.91.0
-    command: ["--config=/etc/otel-collector-config.yaml"]
-    volumes:
-      - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml
-    ports:
-      - "4317:4317" # OTLP gRPC
-      - "4318:4318" # OTLP HTTP
-    networks:
-      - lgtm
-
-  # Tempo（トレース）
-  tempo:
-    image: grafana/tempo:2.3.1
-    command: ["-config.file=/etc/tempo.yaml"]
-    volumes:
-      - ./tempo/tempo.yaml:/etc/tempo.yaml
-      - tempo_/tmp/tempo
-    ports:
-      - "3200:3200" # Tempo
-      - "4317" # OTLP gRPC
-    networks:
-      - lgtm
-
-  # Loki（ログ）
-  loki:
-    image: grafana/loki:2.9.3
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - loki_/loki
-    networks:
-      - lgtm
-
-  # Mimir（メトリクス）
-  mimir:
-    image: grafana/mimir:2.10.4
-    command:
-      - -config.file=/etc/mimir.yaml
-    volumes:
-      - ./mimir/mimir.yaml:/etc/mimir.yaml
-      - mimir_/data
-    ports:
-      - "9009:9009"
-    networks:
-      - lgtm
-
-  # Grafana（可視化）
-  grafana:
-    image: grafana/grafana:10.2.3
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - G
+# 環境変数確認
+docker-compose exec app env | grep OTEL
 ```
+
+### Grafana にアクセスできない
+
+```bash
+# LGTMコンテナの状態確認
+docker-compose ps lgtm
+
+# 再起動
+docker-compose restart lgtm
+```
+
+## 実装時の注意点
+
+### ✅ やること
+
+- 通常の FastAPI コードを書く
+- 環境変数で OpenTelemetry 設定
+- `opentelemetry-instrument`コマンドで起動
+
+### ❌ やらないこと
+
+- OpenTelemetry の import
+- 手動でのスパン作成（自動計装で十分）
+- 設定ファイルの作成（LGTM が全自動）
+- データソースの手動設定（事前設定済み）
+
+## 本番環境への移行
+
+OTEL-LGTM はローカル開発用です。本番環境では：
+
+1. **Grafana Cloud** - マネージドサービス
+2. **個別デプロイ** - Tempo、Loki、Mimir を分離
+3. **Kubernetes オペレーター** - 自動スケーリング
+
+本番移行時もアプリケーションコードは変更不要！
+
+## まとめ
+
+### 🎉 達成したこと
+
+1. **最もシンプル** - わずか 3 サービス
+2. **設定ファイル不要** - docker-compose.yml のみ
+3. **完全な観測性** - トレース + ログ + メトリクス
+4. **クリーンコード** - アプリに観測性コードゼロ
+5. **すぐに使える** - 起動後すぐ Grafana で確認可能
+
+### 📚 参考資料
+
+- [Grafana OTEL-LGTM](https://hub.docker.com/r/grafana/otel-lgtm)
+- [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/python/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+
+---
+
+**このアーキテクチャで、最もシンプルかつ完全な観測性を実現！**
