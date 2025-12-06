@@ -5,7 +5,9 @@ by the opentelemetry-instrument command. No manual spans/metrics needed.
 """
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import todos
 from app.config import settings
@@ -40,6 +42,23 @@ app.include_router(
     prefix="/api/v1/todos",
     tags=["todos"]
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return 400 with validation detail and log the bad payload."""
+    logger.warning(
+        "request validation failed",
+        extra={
+            "endpoint": request.url.path,
+            "service": SERVICE_NAME,
+            "errors": exc.errors(),
+        },
+    )
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": exc.errors()},
+    )
 
 
 @app.get("/")
