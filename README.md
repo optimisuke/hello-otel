@@ -4,7 +4,7 @@
 
 ## ✨ 特徴
 
-- 🚀 **わずか 3 サービス** - app, postgres, lgtm（統合観測基盤）
+- 🚀 **わずか 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）
 - 🎯 **設定ファイル不要** - docker-compose.yml のみ
 - 📊 **完全な観測性** - トレース + ログ + メトリクス
 - 🧹 **クリーンコード** - アプリに観測性コードゼロ
@@ -97,7 +97,8 @@ Grafana にアクセス（http://localhost:3000）して：
 1. **Explore** をクリック
 2. データソース: **Loki** を選択
 3. LogQL クエリ: `{service_name="todo-api"}`
-4. trace_id でフィルタリング可能
+4. 直近のデータが無い場合は時間範囲を「Last 5m」に変更
+5. バリデーションエラーやアクセスログなど、FastAPI が `logger.info`/`logger.warning` で出したものが流れます（`OTEL_LOGS_EXPORTER` は compose で有効化済み）
 
 ### メトリクスの確認
 
@@ -106,6 +107,14 @@ Grafana にアクセス（http://localhost:3000）して：
 3. PromQL クエリ例:
    ```promql
    rate(http_server_duration_count[5m])
+   ```
+4. Span Metrics（トレースから集約されたメトリクス）例:
+   ```promql
+   # ルート別のレイテンシヒストグラム
+   sum by (http_method, http_route, http_status_code, le) (rate(spanmetrics_latency_bucket[5m]))
+
+   # ルート別のリクエストレート
+   sum by (http_method, http_route, http_status_code) (rate(spanmetrics_latency_count[5m]))
    ```
 
 ## 🔌 API 使用例
@@ -211,10 +220,11 @@ hello-otel/
 │   └── routers/
 │       └── todos.py         # CRUDエンドポイント
 ├── alembic/                 # DBマイグレーション
-├── docker-compose.yml       # 3サービス構成
+├── docker-compose.yml       # 4サービス構成
 ├── Dockerfile               # uv対応
 ├── pyproject.toml           # uv依存関係
 ├── .env.example             # 環境変数テンプレート
+├── otel-collector-spanmetrics.yaml # spanmetrics 用 OTEL Collector 設定
 └── README.md
 ```
 
