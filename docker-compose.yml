@@ -29,6 +29,32 @@ services:
     networks:
       - observability
 
+  # Node (Express + TypeScript) Application
+  node-api:
+    build:
+      context: ./node-app
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://todouser:todopass@postgres:5432/tododb
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=todo-api-node
+      - DEPLOYMENT_ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lgtm:
+        condition: service_started
+      collector:
+        condition: service_started
+    networks:
+      - observability
+
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine

@@ -13,8 +13,10 @@ docker-compose up -d
 これだけで以下のサービスが起動します：
 
 - **app**: FastAPI アプリケーション (http://localhost:8000)
+- **node-api**: Express + TypeScript アプリケーション (http://localhost:3001)
 - **postgres**: PostgreSQL データベース
 - **lgtm**: Grafana OTEL-LGTM（統合観測基盤）(http://localhost:3000)
+- **collector**: OpenTelemetry Collector（spanmetrics）(OTLP:4317/4318)
 
 ### 2. データベースマイグレーション
 

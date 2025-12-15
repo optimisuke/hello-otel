@@ -5,11 +5,12 @@ FastAPI のコードは `python-app/` にまとめ、今後 Node 版 API など�
 
 ## ✨ 特徴
 
-- 🚀 **わずか 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）
+- 🚀 **観測基盤は 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）に加え Node 版 API サービスも同梱
 - 🎯 **設定ファイル不要** - docker-compose.yml のみ
 - 📊 **完全な観測性** - トレース + ログ + メトリクス
 - 🧹 **クリーンコード** - アプリに観測性コードゼロ
 - ⚡ **すぐ使える** - 起動後即座に Grafana で確認可能
+- 🧩 **Node 版も同梱** - Express + TypeScript + Prisma で同じ PostgreSQL を共有
 - 🔧 **uv 管理** - 高速な依存関係管理
 
 ## 🛠 技術スタック
@@ -54,6 +55,8 @@ cd hello-otel
 
 ```bash
 cp python-app/.env.example python-app/.env
+# Node 版も動かす場合はこちらもコピー
+cp node-app/.env.example node-app/.env
 # 必要に応じて .env を編集
 ```
 
@@ -68,13 +71,15 @@ docker-compose up -d
 ```bash
 docker-compose exec app alembic upgrade head
 ```
+Node 版（Express）は同じ `todos` テーブルを利用するため、Prisma のマイグレーションは不要です（クライアント生成のみ）。
 
 ### 5. アクセス
 
 | サービス     | URL                        | 説明                   |
 | ------------ | -------------------------- | ---------------------- |
-| **API**      | http://localhost:8000      | FastAPI エンドポイント |
+| **API (FastAPI)** | http://localhost:8000      | Python 版 Todo API     |
 | **API Docs** | http://localhost:8000/docs | Swagger UI             |
+| **API (Node)** | http://localhost:3001      | Express + TypeScript 版 Todo API |
 | **Grafana**  | http://localhost:3000      | 統合ダッシュボード     |
 
 **Grafana 初回ログイン**
@@ -211,6 +216,21 @@ docker-compose exec app alembic upgrade head
 docker-compose exec app alembic downgrade -1
 ```
 
+### Node (Express + TypeScript + Prisma) 版
+
+同じ PostgreSQL を共有し、Prisma はスキーマ生成のみ（マイグレーション不要）で利用します。
+OTEL は `@opentelemetry/sdk-node` + auto-instrumentations で gRPC/OTLP に送信されます。
+
+```bash
+cd node-app
+# 依存インストール
+npm install
+# Prisma クライアント生成（DB スキーマ作成はしません）
+npm run prisma:generate
+# 開発サーバー起動
+PORT=3001 npm run dev
+```
+
 ## 📁 プロジェクト構造
 
 ```
@@ -233,6 +253,12 @@ hello-otel/
 │   ├── Dockerfile               # uv対応
 │   ├── pyproject.toml           # uv依存関係
 │   └── .env.example             # 環境変数テンプレート
+├── node-app/                # Node (Express + TypeScript + Prisma) 版 API
+│   ├── src/                     # ルーター/エントリ
+│   ├── prisma/                  # Prisma schema（マイグレーションなし）
+│   ├── Dockerfile
+│   ├── package.json
+│   └── .env.example
 ├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
 ├── docker-compose.yml           # 4サービス構成
 ├── grafana-dashboard-todo.json  # Todo API用 Grafana Dashboard (importして利用)

@@ -63,6 +63,13 @@ Thumbs.db
 htmlcov/
 .tox/
 
+# Node
+node_modules/
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+node-app/dist/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
