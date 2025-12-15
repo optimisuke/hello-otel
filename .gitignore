@@ -47,8 +47,8 @@ uv.lock
 *.sqlite3
 
 # Alembic
-alembic/versions/*
-!alembic/versions/.gitkeep
+python-app/alembic/versions/*
+!python-app/alembic/versions/.gitkeep
 
 # Docker
 *.log

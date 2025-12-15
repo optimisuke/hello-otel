@@ -290,7 +290,7 @@ app = FastAPI(title="Todo API")
 # メトリクス記録コードなし！
 ```
 
-すべて`opentelemetry-instrument`コマンドが自動で行っています（[`Dockerfile`](Dockerfile)参照）。
+すべて`opentelemetry-instrument`コマンドが自動で行っています（[`Dockerfile`](python-app/Dockerfile)参照）。
 
 ### シンプルな構成
 

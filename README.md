@@ -1,6 +1,7 @@
 # Todo API with OpenTelemetry & Grafana OTEL-LGTM
 
 最もシンプルな構成で完全な観測性を実現した FastAPI Todo アプリケーション。
+FastAPI のコードは `python-app/` にまとめ、今後 Node 版 API などを並走させられるようにしています。
 
 ## ✨ 特徴
 
@@ -52,7 +53,7 @@ cd hello-otel
 ### 2. 環境変数の設定（オプション）
 
 ```bash
-cp .env.example .env
+cp python-app/.env.example python-app/.env
 # 必要に応じて .env を編集
 ```
 
@@ -166,6 +167,8 @@ curl http://localhost:8000/health
 
 ## 💻 ローカル開発
 
+Python (FastAPI) 版は `python-app/` 配下で操作します（docker-compose はリポジトリルートで実行）。
+
 ### uv のインストール
 
 ```bash
@@ -175,12 +178,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 依存関係のインストール
 
 ```bash
+cd python-app
 uv sync
 ```
 
 ### 開発サーバー起動
 
 ```bash
+cd python-app
+
 # 通常起動
 uv run uvicorn app.main:app --reload
 
@@ -209,24 +215,28 @@ docker-compose exec app alembic downgrade -1
 
 ```
 hello-otel/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPIアプリ（クリーンコード）
-│   ├── config.py            # 設定管理
-│   ├── database.py          # DB接続
-│   ├── models/
-│   │   └── todo.py          # SQLAlchemyモデル
-│   ├── schemas/
-│   │   └── todo.py          # Pydanticスキーマ
-│   └── routers/
-│       └── todos.py         # CRUDエンドポイント
-├── alembic/                 # DBマイグレーション
-├── docker-compose.yml       # 4サービス構成
-├── Dockerfile               # uv対応
-├── pyproject.toml           # uv依存関係
-├── .env.example             # 環境変数テンプレート
-├── collector.yaml           # spanmetrics 用 OTEL Collector 設定
-├── grafana-dashboard-todo.json # Todo API用 Grafana Dashboard (importして利用)
+├── python-app/              # Python (FastAPI) 版 API 一式
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py              # FastAPIアプリ（クリーンコード）
+│   │   ├── config.py            # 設定管理
+│   │   ├── database.py          # DB接続
+│   │   ├── models/
+│   │   │   └── todo.py          # SQLAlchemyモデル
+│   │   ├── schemas/
+│   │   │   └── todo.py          # Pydanticスキーマ
+│   │   └── routers/
+│   │       └── todos.py         # CRUDエンドポイント
+│   ├── alembic/                 # DBマイグレーション
+│   │   └── versions/
+│   ├── alembic.ini
+│   ├── Dockerfile               # uv対応
+│   ├── pyproject.toml           # uv依存関係
+│   └── .env.example             # 環境変数テンプレート
+├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
+├── docker-compose.yml           # 4サービス構成
+├── grafana-dashboard-todo.json  # Todo API用 Grafana Dashboard (importして利用)
+├── grafana/                     # Grafana provisioning
 └── README.md
 ```
 
@@ -347,7 +357,7 @@ uv run pytest
 
 ### ✅ アプリケーションコードはクリーン
 
-[`app/main.py`](app/main.py)には観測性のコードが**一切ありません**：
+[`app/main.py`](python-app/app/main.py)には観測性のコードが**一切ありません**：
 
 ```python
 from fastapi import FastAPI

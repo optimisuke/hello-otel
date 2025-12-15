@@ -1,7 +1,9 @@
 services:
   # FastAPI Application
   app:
-    build: .
+    build:
+      context: ./python-app
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
