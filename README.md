@@ -62,6 +62,7 @@ cp spring-app/.env.example spring-app/.env
 
 ```bash
 docker-compose up -d
+docker-compose run --rm --profile testing k6   # k6 負荷テスト（任意）
 ```
 
 ### 4. データベースマイグレーション
@@ -190,6 +191,7 @@ hello-otel/
 │   ├── pom.xml
 │   ├── Dockerfile
 │   └── .env.example
+├── k6/                      # k6 テストスクリプト
 ├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
 ├── docker-compose.yml           # 4サービス構成
 ├── grafana-dashboard-todo.json  # Todo API用 Grafana Dashboard (importして利用)

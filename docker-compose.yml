@@ -85,6 +85,20 @@ services:
     networks:
       - observability
 
+  # k6 load test (profile: testing)
+  k6:
+    image: grafana/k6:0.54.0
+    profiles: ["testing"]
+    environment:
+      - FASTAPI_BASE_URL=http://app:8000
+      - NODE_BASE_URL=http://node-api:3001
+      - SPRING_BASE_URL=http://spring-api:8080
+    volumes:
+      - ./k6:/scripts:ro
+    entrypoint: ["k6", "run", "/scripts/basic.js"]
+    networks:
+      - observability
+
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
