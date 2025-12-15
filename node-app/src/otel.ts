@@ -1,7 +1,9 @@
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { Resource } from '@opentelemetry/resources';
+import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -15,6 +17,7 @@ const sdk = new NodeSDK({
       process.env.DEPLOYMENT_ENVIRONMENT || 'development',
   }),
   traceExporter: new OTLPTraceExporter(),
+  logRecordProcessor: new BatchLogRecordProcessor(new OTLPLogExporter()),
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
