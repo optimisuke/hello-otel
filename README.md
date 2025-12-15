@@ -57,6 +57,8 @@ cd hello-otel
 cp python-app/.env.example python-app/.env
 # Node 版も動かす場合はこちらもコピー
 cp node-app/.env.example node-app/.env
+# Spring 版も動かす場合はこちらもコピー
+cp spring-app/.env.example spring-app/.env
 # 必要に応じて .env を編集
 ```
 
@@ -78,6 +80,7 @@ Node 版（Express）は同じ `todos` テーブルを利用するため、Prism
 | **API (FastAPI)** | http://localhost:8000      | Python 版 Todo API     |
 | **API Docs** | http://localhost:8000/docs | Swagger UI             |
 | **API (Node)** | http://localhost:3001      | Express + TypeScript 版 Todo API |
+| **API (Spring)** | http://localhost:8080      | Spring Boot 版 Todo API |
 | **Grafana**  | http://localhost:3000      | 統合ダッシュボード     |
 
 **Grafana 初回ログイン**
@@ -171,6 +174,11 @@ hello-otel/
 │   ├── prisma/                  # Prisma schema（マイグレーションなし）
 │   ├── Dockerfile
 │   ├── package.json
+│   └── .env.example
+├── spring-app/              # Spring Boot + Maven 版 API（OTEL Java Agent）
+│   ├── src/
+│   ├── pom.xml
+│   ├── Dockerfile
 │   └── .env.example
 ├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
 ├── docker-compose.yml           # 4サービス構成

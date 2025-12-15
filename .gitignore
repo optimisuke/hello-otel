@@ -57,6 +57,9 @@ python-app/alembic/versions/*
 .DS_Store
 Thumbs.db
 
+# Java/Maven
+spring-app/target/
+
 # Testing
 .pytest_cache/
 .coverage
