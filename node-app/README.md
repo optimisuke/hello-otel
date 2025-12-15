@@ -1,10 +1,8 @@
 # Node Todo API (Express + TypeScript + Prisma)
 
-- Shared PostgreSQL with the FastAPI service (`todos` table)
-- OpenTelemetry auto-instrumentation via `@opentelemetry/sdk-node`
-- No Prisma migrations; only client generation is needed
+FastAPI 版と同じ PostgreSQL の `todos` テーブルを共有する Node 実装です。OpenTelemetry は `@opentelemetry/sdk-node` の自動計装を使用し、Prisma はクライアント生成のみ（マイグレーション不要）です。
 
-## Local dev
+## ローカル開発
 
 ```bash
 cp .env.example .env
@@ -13,4 +11,4 @@ npm run prisma:generate
 PORT=3001 npm run dev
 ```
 
-The service exposes the same endpoints as the Python version under `http://localhost:3001/api/v1/todos` and reports telemetry to the OTLP collector (`collector:4317`).
+エンドポイントは Python 版と同じく `http://localhost:3001/api/v1/todos` 配下にあり、テレメトリは OTLP (collector:4317/4318) に送信されます。

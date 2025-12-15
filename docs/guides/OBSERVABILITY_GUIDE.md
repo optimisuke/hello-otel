@@ -221,6 +221,36 @@ async def some_function():
 
 ## OpenTelemetry Collector 設定
 
+## Node (Express + TypeScript) での OpenTelemetry 自動計装
+
+- 使うもの: `@opentelemetry/sdk-node`, `@opentelemetry/auto-instrumentations-node`, `@opentelemetry/exporter-trace-otlp-grpc`, `@opentelemetry/exporter-logs-otlp-http`
+- エンドポイント: `OTEL_EXPORTER_OTLP_ENDPOINT=collector:4317` (traces), `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://collector:4318/v1/logs` (logs), `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://collector:4318/v1/metrics` (metrics)
+- サービス名: `OTEL_SERVICE_NAME=todo-api-node`
+
+```ts
+// otel.ts
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+
+const sdk = new NodeSDK({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'todo-api-node',
+  }),
+  traceExporter: new OTLPTraceExporter(),
+  logRecordProcessor: new BatchLogRecordProcessor(new OTLPLogExporter()),
+  instrumentations: [getNodeAutoInstrumentations()],
+});
+
+sdk.start();
+```
+
+- Express コードの先頭で `import './otel'` しておけば自動計装が有効化され、Trace/Logs/Metrics が Collector に流れる。
+
 ### 基本構成
 
 ```yaml

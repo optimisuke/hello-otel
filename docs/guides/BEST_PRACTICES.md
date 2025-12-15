@@ -56,6 +56,40 @@ def get_todos(db: Session) -> List[Todo]:
     return db.query(Todo).all()
 ```
 
+### TypeScript/Node スタイルガイド
+
+- ESLint/Prettier を前提に、`strict` な `tsconfig` を維持する。
+- `async/await` を徹底し、`Promise<void>` など戻り値の型も明示する。
+- DI は薄く、Prisma Client は 1 インスタンスを共有（リクエストごとに生成しない）。
+- 例外は Express のエラーハンドラに集約し、`zod` で入力をバリデートする。
+
+```ts
+import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
+import express from 'express';
+
+const prisma = new PrismaClient();
+const app = express();
+
+const todoSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().optional(),
+  completed: z.boolean().optional(),
+});
+
+app.post('/api/v1/todos', async (req, res, next) => {
+  try {
+    const data = todoSchema.parse(req.body);
+    const todo = await prisma.todo.create({
+      data: { ...data, completed: data.completed ?? false },
+    });
+    res.status(201).json(todo);
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
 ## OpenTelemetry 実装パターン
 
 ### 1. トレースのベストプラクティス
@@ -213,6 +247,26 @@ log_with_context(
     todo_id=str(todo.id),
     user_action="create"
 )
+```
+
+#### Node/Express + OpenTelemetry Logger
+
+```ts
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+
+const otelLogger = logs.getLogger('todo-api-node');
+
+const logInfo = (event: string, payload: Record<string, unknown> = {}) => {
+  otelLogger.emit({
+    body: event,
+    severityNumber: SeverityNumber.INFO,
+    severityText: 'INFO',
+    attributes: { ...payload },
+  });
+  console.log('[node-api]', event, payload); // stdout も残す
+};
+
+logInfo('todo_created', { todo_id: id });
 ```
 
 ## エラーハンドリング

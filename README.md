@@ -68,9 +68,7 @@ docker-compose up -d
 
 ### 4. データベースマイグレーション
 
-```bash
-docker-compose exec app alembic upgrade head
-```
+FastAPI 版のマイグレーション手順は `python-app/README.md` を参照してください。
 Node 版（Express）は同じ `todos` テーブルを利用するため、Prisma のマイグレーションは不要です（クライアント生成のみ）。
 
 ### 5. アクセス
@@ -125,96 +123,11 @@ Grafana にアクセス（http://localhost:3000）して：
    ```
 
 ## 🔌 API 使用例
-
-### Todo 作成
-
-```bash
-curl -X POST http://localhost:8000/api/v1/todos \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Buy groceries",
-    "description": "Milk, bread, eggs",
-    "completed": false
-  }'
-```
-
-### Todo 一覧取得
-
-```bash
-curl http://localhost:8000/api/v1/todos
-```
-
-### 特定の Todo 取得
-
-```bash
-curl http://localhost:8000/api/v1/todos/{todo_id}
-```
-
-### Todo 更新
-
-```bash
-curl -X PUT http://localhost:8000/api/v1/todos/{todo_id} \
-  -H "Content-Type: application/json" \
-  -d '{"completed": true}'
-```
-
-### Todo 削除
-
-```bash
-curl -X DELETE http://localhost:8000/api/v1/todos/{todo_id}
-```
-
-### ヘルスチェック
-
-```bash
-curl http://localhost:8000/health
-```
+Python 版のエンドポイント例は `python-app/README.md` を参照してください（Node 版はポート 3001 で同じパス）。
 
 ## 💻 ローカル開発
 
-Python (FastAPI) 版は `python-app/` 配下で操作します（docker-compose はリポジトリルートで実行）。
-
-### uv のインストール
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### 依存関係のインストール
-
-```bash
-cd python-app
-uv sync
-```
-
-### 開発サーバー起動
-
-```bash
-cd python-app
-
-# 通常起動
-uv run uvicorn app.main:app --reload
-
-# OpenTelemetry自動計装付き
-uv run opentelemetry-instrument \
-  --traces_exporter otlp \
-  --metrics_exporter otlp \
-  --logs_exporter otlp \
-  uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### データベースマイグレーション
-
-```bash
-# 新しいマイグレーション作成
-docker-compose exec app alembic revision --autogenerate -m "description"
-
-# マイグレーション適用
-docker-compose exec app alembic upgrade head
-
-# ロールバック
-docker-compose exec app alembic downgrade -1
-```
+Python 版のローカル開発手順は `python-app/README.md` を参照してください。
 
 ### Node (Express + TypeScript + Prisma) 版
 
@@ -332,10 +245,10 @@ docker-compose up -d --build
 
 ## 📖 詳細ドキュメント
 
-- [`FINAL_ARCHITECTURE_V2.md`](FINAL_ARCHITECTURE_V2.md) - 最終アーキテクチャ設計
-- [`MIMIR_GUIDE.md`](MIMIR_GUIDE.md) - Mimir vs Prometheus 比較
-- [`OBSERVABILITY_GUIDE.md`](OBSERVABILITY_GUIDE.md) - OpenTelemetry 技術ガイド
-- [`BEST_PRACTICES.md`](BEST_PRACTICES.md) - コーディング規約
+- [`docs/architecture/FINAL_ARCHITECTURE.md`](docs/architecture/FINAL_ARCHITECTURE.md) - 最終アーキテクチャ設計
+- [`docs/guides/MIMIR_GUIDE.md`](docs/guides/MIMIR_GUIDE.md) - Mimir vs Prometheus 比較
+- [`docs/guides/OBSERVABILITY_GUIDE.md`](docs/guides/OBSERVABILITY_GUIDE.md) - OpenTelemetry 技術ガイド
+- [`docs/guides/BEST_PRACTICES.md`](docs/guides/BEST_PRACTICES.md) - コーディング規約
 
 ## 🎯 自動取得されるテレメトリ
 
@@ -369,37 +282,11 @@ docker-compose logs -f app
 # シェル接続
 docker-compose exec app /bin/bash
 
-# Python依存関係追加
-uv add <package-name>
-
-# 依存関係同期
-uv sync
-
-# テスト実行（今後追加）
-uv run pytest
+# Node API 再起動
+docker-compose restart node-api
 ```
 
 ## 🌟 重要なポイント
-
-### ✅ アプリケーションコードはクリーン
-
-[`app/main.py`](python-app/app/main.py)には観測性のコードが**一切ありません**：
-
-```python
-from fastapi import FastAPI
-
-app = FastAPI(title="Todo API")
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-# OpenTelemetryのimportなし！
-# スパン作成なし！
-# メトリクス記録なし！
-```
-
-すべて`opentelemetry-instrument`コマンドが自動で行います。
 
 ### 🎯 Grafana OTEL-LGTM の利点
 
