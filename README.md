@@ -1,7 +1,7 @@
 # Todo API with OpenTelemetry & Grafana OTEL-LGTM
 
-最もシンプルな構成で完全な観測性を実現した FastAPI Todo アプリケーション。
-FastAPI のコードは `python-app/` にまとめ、今後 Node 版 API などを並走させられるようにしています。
+最もシンプルな構成で完全な観測性を実現した Todo アプリケーション。
+Python(FastAPI)、Node(Express)、Java(Spring Boot) の 3 実装を同梱し、同じ PostgreSQL に接続します。
 
 ## ✨ 特徴
 
@@ -15,27 +15,23 @@ FastAPI のコードは `python-app/` にまとめ、今後 Node 版 API など�
 
 ## 🛠 技術スタック
 
-### アプリケーション
+### アプリケーション（3 実装）
 
-- **FastAPI** - Python ウェブフレームワーク
-- **SQLAlchemy** - ORM
-- **PostgreSQL** - データベース
-- **uv** - Python 依存関係管理
-- **Alembic** - データベースマイグレーション
+- **Python**: FastAPI + SQLAlchemy + Alembic（`python-app/`）
+- **Node.js**: Express + TypeScript + Prisma（`node-app/`）
+- **Java**: Spring Boot + Spring Data JPA（`spring-app/`、Java Agentで自動計装）
+- **PostgreSQL**: 共通データベース
 
 ### 観測性（LGTM 統合）
 
-- **Grafana OTEL-LGTM** - オールインワン観測基盤
-  - OpenTelemetry Collector
-  - Tempo（トレース）
-  - Loki（ログ）
-  - Mimir（メトリクス）
-  - Grafana（可視化）
+- **Grafana OTEL-LGTM**: Grafana / Tempo / Loki / Mimir
+- **OpenTelemetry Collector**: spanmetrics connector 付き
 
 ### 自動計装
 
-- **opentelemetry-instrument** - コマンドライン自動計装
-- コード変更不要の完全自動化
+- Python: `opentelemetry-instrument`
+- Node: `@opentelemetry/sdk-node` + auto-instrumentations
+- Java: OpenTelemetry Java Agent（`-javaagent`）
 
 ## 📦 前提条件
 
@@ -145,6 +141,20 @@ npm install
 npm run prisma:generate
 # 開発サーバー起動
 PORT=3001 npm run dev
+```
+
+### Spring Boot 版
+
+同じ PostgreSQL の `todos` テーブルをそのまま利用し、マイグレーションは行いません。OTEL は Java Agent で自動計装します。
+
+```bash
+cd spring-app
+mvn clean package -DskipTests          # または docker-compose が自動ビルド
+docker-compose build spring-api
+docker-compose up -d spring-api
+
+# エンドポイント
+# GET/POST/PUT/DELETE http://localhost:8080/api/v1/todos
 ```
 
 ## 📁 プロジェクト構造
