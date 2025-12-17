@@ -1,25 +1,26 @@
 # Todo API with OpenTelemetry & Grafana OTEL-LGTM
 
 最もシンプルな構成で完全な観測性を実現した Todo アプリケーション。
-Python(FastAPI)、Node(Express)、Java(Spring Boot) の 3 実装を同梱し、同じ PostgreSQL に接続します。
+Python(FastAPI)、Node(Express)、Java(Spring Boot)、Go(chi) の 4 実装を同梱し、同じ PostgreSQL に接続します。
 
 ## ✨ 特徴
 
-- 🚀 **観測基盤は 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）に加え Node 版 API サービスも同梱
+- 🚀 **観測基盤は 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）に加え Node/Go 版 API サービスも同梱
 - 🎯 **設定ファイル不要** - docker-compose.yml のみ
 - 📊 **完全な観測性** - トレース + ログ + メトリクス
 - 🧹 **クリーンコード** - アプリに観測性コードゼロ
 - ⚡ **すぐ使える** - 起動後即座に Grafana で確認可能
-- 🧩 **Node 版も同梱** - Express + TypeScript + Prisma で同じ PostgreSQL を共有
+- 🧩 **Node/Go 版も同梱** - Express + TypeScript + Prisma と chi + sqlx で同じ PostgreSQL を共有
 - 🔧 **uv 管理** - 高速な依存関係管理
 
 ## 🛠 技術スタック
 
-### アプリケーション（3 実装）
+### アプリケーション（4 実装）
 
 - **Python**: FastAPI + SQLAlchemy + Alembic（`python-app/`）
 - **Node.js**: Express + TypeScript + Prisma（`node-app/`）
 - **Java**: Spring Boot + Spring Data JPA（`spring-app/`、Java Agentで自動計装）
+- **Go**: chi + sqlx + pgx（`go-app/`）
 - **PostgreSQL**: 共通データベース
 
 ### 観測性（LGTM 統合）
@@ -55,6 +56,8 @@ cp python-app/.env.example python-app/.env
 cp node-app/.env.example node-app/.env
 # Spring 版も動かす場合はこちらもコピー
 cp spring-app/.env.example spring-app/.env
+# Go 版も動かす場合はこちらもコピー
+cp go-app/.env.example go-app/.env
 # 必要に応じて .env を編集
 ```
 
@@ -78,6 +81,7 @@ Node 版（Express）は同じ `todos` テーブルを利用するため、Prism
 | **API Docs** | http://localhost:8000/docs | Swagger UI             |
 | **API (Node)** | http://localhost:3001      | Express + TypeScript 版 Todo API |
 | **API (Spring)** | http://localhost:8080      | Spring Boot 版 Todo API |
+| **API (Go)** | http://localhost:3002      | chi + sqlx 版 Todo API |
 | **Grafana**  | http://localhost:3000      | 統合ダッシュボード     |
 
 **Grafana 初回ログイン**
@@ -158,6 +162,22 @@ docker-compose up -d spring-api
 # GET/POST/PUT/DELETE http://localhost:8080/api/v1/todos
 ```
 
+### Go (chi + sqlx + pgx) 版
+
+同じ PostgreSQL の `todos` テーブルをそのまま利用し、OTEL は後から追加予定です（現時点ではプレーンな HTTP/DB のみ）。
+
+```bash
+cd go-app
+cp .env.example .env
+
+# ビルド/テスト
+go test ./...
+
+# ローカル起動
+PORT=3002 DATABASE_URL=postgresql://todouser:todopass@localhost:5432/tododb \\
+  go run ./cmd/server
+```
+
 ## 📁 プロジェクト構造
 
 ```
@@ -191,9 +211,14 @@ hello-otel/
 │   ├── pom.xml
 │   ├── Dockerfile
 │   └── .env.example
+├── go-app/                  # Go (chi + sqlx + pgx) 版 API
+│   ├── cmd/
+│   ├── internal/
+│   ├── Dockerfile
+│   └── .env.example
 ├── k6/                      # k6 テストスクリプト
 ├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
-├── docker-compose.yml           # 4サービス構成
+├── docker-compose.yml           # アプリ/観測基盤構成
 ├── grafana-dashboard-todo.json  # Todo API用 Grafana Dashboard (importして利用)
 ├── grafana/                     # Grafana provisioning
 └── README.md
