@@ -193,6 +193,26 @@ services:
       - lgtm
     networks:
       - observability
+
+  # Beyla (eBPF auto-instrumentation for Rust API)
+  # NOTE: Requires a Linux kernel with eBPF support. On macOS, this works inside Rancher Desktop's Linux VM.
+  beyla:
+    image: grafana/beyla:latest
+    command: ["-config", "/config/beyla.yaml"]
+    privileged: true
+    pid: "host"
+    volumes:
+      - ./beyla/beyla.yaml:/config/beyla.yaml:ro
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys/fs/bpf:/sys/fs/bpf
+      - /lib/modules:/lib/modules:ro
+    depends_on:
+      collector:
+        condition: service_started
+      rust-api:
+        condition: service_started
+    networks:
+      - observability
 volumes:
   postgres_data:
   go_api_logs:

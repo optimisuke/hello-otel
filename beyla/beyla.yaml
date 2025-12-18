@@ -1,0 +1,14 @@
+otel_traces_export:
+  endpoint: http://collector:4317
+  protocol: grpc
+  instrumentations: ["http", "sql"]
+
+otel_metrics_export:
+  endpoint: http://collector:4317
+  protocol: grpc
+  instrumentations: ["http", "sql"]
+
+discovery:
+  instrument:
+    - exe_path: "*/todo-api-rust"
+      name: "todo-api-rust"
