@@ -30,6 +30,27 @@ services:
     networks:
       - observability
 
+  # LLM Job (OpenAI API + Traceloop/OpenLLMetry -> OTLP)
+  llm-job:
+    build:
+      context: ./llm-job
+      dockerfile: Dockerfile
+    profiles: ["llm"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_PROMPT=${OPENAI_PROMPT:-"俳句を詠んで OpenTelemetryについて"}
+      - DEPLOYMENT_ENVIRONMENT=development
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      - OTEL_SERVICE_NAME=llm-job
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=development
+      - TRACELOOP_LOGGING_ENABLED=true
+    depends_on:
+      collector:
+        condition: service_started
+    networks:
+      - observability
+
   # Node (Express + TypeScript) Application
   node-api:
     build:

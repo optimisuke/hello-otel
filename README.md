@@ -104,6 +104,24 @@ Grafana にアクセス（http://localhost:3000）して：
 3. **Search** タブでトレースを検索
 4. リクエストのフローを確認
 
+### LLM API（OpenAI）呼び出しのトレース（job コンテナ）
+
+OpenLLMetry / Traceloop SDK を使って、OpenAI API 呼び出しのスパンを OTLP で Collector に送ります。
+
+```bash
+# 先に観測基盤だけ上げる（全部 up していてもOK）
+docker-compose up -d lgtm collector
+
+# OpenAI のAPIキーを渡して job を1回実行（--profile llm）
+export OPENAI_API_KEY="sk-..."
+docker-compose --profile llm run --rm llm-job
+```
+
+- 追加で指定できる環境変数: `OPENAI_MODEL` / `OPENAI_PROMPT`
+- Grafana → Explore → Tempo で `service.name=llm-job` を検索すると見つけやすいです
+- ログは Grafana → Explore → Loki で `{service_name="llm-job"}` を検索すると確認できます
+  - ※ Traceloop のログ出力はデフォルト無効なので、compose 側で `TRACELOOP_LOGGING_ENABLED=true` を指定しています
+
 ### ログの確認
 
 1. **Explore** をクリック
@@ -238,6 +256,7 @@ hello-otel/
 │   └── README.md
 ├── k6/                      # k6 テストスクリプト
 ├── beyla/                   # Beyla(eBPF) 設定
+├── llm-job/                 # OpenAI 呼び出し job（Traceloop/OpenLLMetry）
 ├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
 ├── docker-compose.yml           # アプリ/観測基盤構成
 ├── grafana-dashboard-todo.json  # Todo API用 Grafana Dashboard (importして利用)
