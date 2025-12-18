@@ -42,6 +42,8 @@ exporters:
       insecure: true
   otlphttp/lgtm:
     endpoint: http://lgtm:4318
+  debug:
+    verbosity: basic
 
 extensions:
   health_check: {}
@@ -52,7 +54,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [spanmetrics, otlp/lgtm]
+      exporters: [spanmetrics, otlp/lgtm, debug]
     metrics:
       receivers: [spanmetrics, otlp]
       processors: [batch]
@@ -60,8 +62,8 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/lgtm]
+      exporters: [otlphttp/lgtm, debug]
     logs/go_api:
       receivers: [filelog/go_api]
       processors: [resource/go_api_logs, batch]
-      exporters: [otlphttp/lgtm]
+      exporters: [otlphttp/lgtm, debug]

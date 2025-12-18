@@ -186,6 +186,9 @@ services:
   collector:
     image: otel/opentelemetry-collector-contrib:0.139.0
     command: ["--config=/etc/otelcol/collector.yaml"]
+    ports:
+      - "14317:4317" # OTLP gRPC (ホスト側は14317にマップ)
+      - "14318:4318" # OTLP HTTP (ホスト側は14318にマップ)
     volumes:
       - ./collector.yaml:/etc/otelcol/collector.yaml:ro
       - go_api_logs:/var/log/go-api:ro
