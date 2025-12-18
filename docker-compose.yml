@@ -87,6 +87,25 @@ services:
     networks:
       - observability
 
+  # Rust (axum + sqlx) Application (no OTEL yet)
+  rust-api:
+    build:
+      context: ./rust-app
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3003
+      - DATABASE_URL=postgresql://todouser:todopass@postgres:5432/tododb
+      - SERVICE_NAME=todo-api-rust
+      - RUST_LOG=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - observability
+
   # Spring Boot Application (Java, OTEL Java Agent)
   spring-api:
     build:

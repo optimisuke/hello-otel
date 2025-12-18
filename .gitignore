@@ -73,6 +73,9 @@ pnpm-lock.yaml
 yarn.lock
 node-app/dist/
 
+# Rust
+rust-app/target/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
