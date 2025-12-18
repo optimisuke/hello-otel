@@ -12,9 +12,8 @@ RUN curl -fsSL "${OTEL_AGENT_URL}" -o /usr/local/bin/otel && chmod +x /usr/local
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux otel go build -o /bin/server ./cmd/server
 
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:latest
 WORKDIR /app
 COPY --from=builder /bin/server /server
-USER nonroot:nonroot
 EXPOSE 3002
 ENTRYPOINT ["/server"]

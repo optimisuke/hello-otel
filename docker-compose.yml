@@ -68,15 +68,15 @@ services:
     environment:
       - PORT=3002
       - DATABASE_URL=postgresql://todouser:todopass@postgres:5432/tododb
+      - LOG_FILE_PATH=/var/log/go-api/app.log
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://collector:4318/v1/traces
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://collector:4318/v1/metrics
-      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://collector:4318/v1/logs
       - OTEL_SERVICE_NAME=todo-api-go
-      - OTEL_LOGS_EXPORTER=otlp,console
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=development
+    volumes:
+      - go_api_logs:/var/log/go-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -168,12 +168,14 @@ services:
     command: ["--config=/etc/otelcol/collector.yaml"]
     volumes:
       - ./collector.yaml:/etc/otelcol/collector.yaml:ro
+      - go_api_logs:/var/log/go-api:ro
     depends_on:
       - lgtm
     networks:
       - observability
 volumes:
   postgres_data:
+  go_api_logs:
 
 networks:
   observability:

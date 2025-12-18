@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Port        int    `env:"PORT" envDefault:"3002"`
 	DatabaseURL string `env:"DATABASE_URL,required"`
+	LogFilePath string `env:"LOG_FILE_PATH"`
 }
 
 // Load parses environment variables into Config.

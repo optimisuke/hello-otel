@@ -5,9 +5,24 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+  filelog/go_api:
+    include: [/var/log/go-api/*.log]
+    start_at: beginning
+    operators:
+      - type: json_parser
+        parse_from: body
+        parse_to: attributes
+      - type: move
+        from: attributes.msg
+        to: body
 
 processors:
   batch: {}
+  resource/go_api_logs:
+    attributes:
+      - key: service.name
+        action: upsert
+        value: todo-api-go
 
 connectors:
   spanmetrics:
@@ -45,4 +60,8 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
+      exporters: [otlphttp/lgtm]
+    logs/go_api:
+      receivers: [filelog/go_api]
+      processors: [resource/go_api_logs, batch]
       exporters: [otlphttp/lgtm]

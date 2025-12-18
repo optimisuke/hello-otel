@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"go-app/internal/config"
@@ -28,7 +30,7 @@ func main() {
 	}
 	defer database.Close()
 
-	logger, err := zap.NewProduction()
+	logger, err := newLogger(cfg.LogFilePath)
 	if err != nil {
 		log.Fatalf("failed to init logger: %v", err)
 	}
@@ -52,4 +54,22 @@ func main() {
 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+func newLogger(logFilePath string) (*zap.Logger, error) {
+	cfg := zap.NewProductionConfig()
+
+	outputs := []string{"stdout"}
+	if logFilePath != "" {
+		if err := os.MkdirAll(filepath.Dir(logFilePath), 0o755); err != nil {
+			// Fall back to stdout-only rather than failing the service.
+			log.Printf("failed to create log dir: %v", err)
+		} else {
+			outputs = append(outputs, logFilePath)
+		}
+	}
+
+	cfg.OutputPaths = outputs
+	cfg.ErrorOutputPaths = outputs
+	return cfg.Build()
 }
