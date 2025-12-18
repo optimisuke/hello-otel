@@ -1,3 +1,6 @@
+log_level: INFO
+trace_printer: disabled
+
 otel_traces_export:
   endpoint: http://collector:4317
   protocol: grpc

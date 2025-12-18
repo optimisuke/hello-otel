@@ -26,3 +26,8 @@ docker compose up -d postgres collector lgtm rust-api beyla
 - 何も計装されない:
   - `rust-api` が実際に 3003 で listen しているか確認してください
   - `docker compose logs -f beyla` で discovery のログを確認してください
+
+## SQL span についての注意
+
+- Beyla は eBPF ベースで HTTP と SQL の span を生成できますが、Rust の場合は generic tracer (言語によらず汎用的なトレーサー) 扱いになることがあり、**HTTP span の子として同じ Trace に SQL span がぶら下がるとは限りません**（SQL 側が別 Trace になるケースがあります）。
+- その場合は HTTP の trace を開いて探すより、Tempo の検索で `db.*` / `server.port=5432` / `span.kind=client` などで **SQL span 側から探す**のが早いです。
