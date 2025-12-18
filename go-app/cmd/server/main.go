@@ -10,8 +10,8 @@ import (
 	"go-app/internal/config"
 	"go-app/internal/db"
 	"go-app/internal/server"
-	"go-app/internal/telemetry"
 	"go-app/internal/todo"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -28,15 +28,12 @@ func main() {
 	}
 	defer database.Close()
 
-	lp, logger, err := telemetry.InitLoggerProvider(ctx)
+	logger, err := zap.NewProduction()
 	if err != nil {
-		log.Fatalf("failed to init otel logger: %v", err)
+		log.Fatalf("failed to init logger: %v", err)
 	}
 	defer func() {
-		logger.Sync()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = lp.Shutdown(shutdownCtx)
+		_ = logger.Sync()
 	}()
 
 	repo := todo.NewRepository(database)

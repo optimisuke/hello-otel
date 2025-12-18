@@ -68,18 +68,15 @@ services:
     environment:
       - PORT=3002
       - DATABASE_URL=postgresql://todouser:todopass@postgres:5432/tododb
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://collector:4318/v1/traces
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://collector:4317
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://collector:4318/v1/metrics
-      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://collector:4318/v1/logs
-      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=todo-api-go
+      - OTEL_LOGS_EXPORTER=otlp,console
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_METRICS_EXPORTER=otlp
-      - OTEL_LOGS_EXPORTER=otlp,console
-      - OTEL_SERVICE_NAME=todo-api-go
-      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=development
     depends_on:
       postgres:
         condition: service_healthy
