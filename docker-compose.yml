@@ -141,6 +141,7 @@ services:
       - FASTAPI_BASE_URL=http://app:8000
       - NODE_BASE_URL=http://node-api:3001
       - SPRING_BASE_URL=http://spring-api:8080
+      - RUST_BASE_URL=http://rust-api:3003
     volumes:
       - ./k6:/scripts:ro
     entrypoint: ["k6", "run", "/scripts/basic.js"]
