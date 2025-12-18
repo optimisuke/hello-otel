@@ -1,26 +1,27 @@
 # Todo API with OpenTelemetry & Grafana OTEL-LGTM
 
 最もシンプルな構成で完全な観測性を実現した Todo アプリケーション。
-Python(FastAPI)、Node(Express)、Java(Spring Boot)、Go(chi) の 4 実装を同梱し、同じ PostgreSQL に接続します。
+Python(FastAPI)、Node(Express)、Java(Spring Boot)、Go(chi)、Rust(axum) の 5 実装を同梱し、同じ PostgreSQL に接続します。
 
 ## ✨ 特徴
 
-- 🚀 **観測基盤は 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）に加え Node/Go 版 API サービスも同梱
+- 🚀 **観測基盤は 4 サービス** - app, postgres, lgtm（統合観測基盤）, otel-collector（spanmetrics）に加え Node/Go/Rust 版 API サービスも同梱
 - 🎯 **設定ファイル不要** - docker-compose.yml のみ
 - 📊 **完全な観測性** - トレース + ログ + メトリクス
 - 🧹 **クリーンコード** - アプリに観測性コードゼロ
 - ⚡ **すぐ使える** - 起動後即座に Grafana で確認可能
-- 🧩 **Node/Go 版も同梱** - Express + TypeScript + Prisma と chi + sqlx で同じ PostgreSQL を共有
+- 🧩 **Node/Go/Rust 版も同梱** - Express + TypeScript + Prisma、chi + sqlx、axum + sqlx で同じ PostgreSQL を共有
 - 🔧 **uv 管理** - 高速な依存関係管理
 
 ## 🛠 技術スタック
 
-### アプリケーション（4 実装）
+### アプリケーション（5 実装）
 
 - **Python**: FastAPI + SQLAlchemy + Alembic（`python-app/`）
 - **Node.js**: Express + TypeScript + Prisma（`node-app/`）
 - **Java**: Spring Boot + Spring Data JPA（`spring-app/`、Java Agentで自動計装）
 - **Go**: chi + sqlx + pgx（`go-app/`）
+- **Rust**: axum + sqlx（`rust-app/`、Beyla(eBPF) で自動計装）
 - **PostgreSQL**: 共通データベース
 
 ### 観測性（LGTM 統合）
@@ -33,6 +34,8 @@ Python(FastAPI)、Node(Express)、Java(Spring Boot)、Go(chi) の 4 実装を同
 - Python: `opentelemetry-instrument`
 - Node: `@opentelemetry/sdk-node` + auto-instrumentations
 - Java: OpenTelemetry Java Agent（`-javaagent`）
+- Go: Loongsuite（`otel go build`）
+- Rust: Grafana Beyla（eBPF / Linux カーネル要件あり）
 
 ## 📦 前提条件
 
@@ -82,6 +85,7 @@ Node 版（Express）は同じ `todos` テーブルを利用するため、Prism
 | **API (Node)** | http://localhost:3001      | Express + TypeScript 版 Todo API |
 | **API (Spring)** | http://localhost:8080      | Spring Boot 版 Todo API |
 | **API (Go)** | http://localhost:3002      | chi + sqlx 版 Todo API |
+| **API (Rust)** | http://localhost:3003      | axum + sqlx 版 Todo API |
 | **Grafana**  | http://localhost:3000      | 統合ダッシュボード     |
 
 **Grafana 初回ログイン**
@@ -164,7 +168,7 @@ docker-compose up -d spring-api
 
 ### Go (chi + sqlx + pgx) 版
 
-同じ PostgreSQL の `todos` テーブルをそのまま利用し、OTEL は後から追加予定です（現時点ではプレーンな HTTP/DB のみ）。
+同じ PostgreSQL の `todos` テーブルをそのまま利用します。Docker ビルド時に Loongsuite の `otel go build` で自動計装したバイナリを生成します（トレース/メトリクス）。ログは stdout に加えてファイルにも出力でき、compose では Collector の filelog receiver で Loki に送ります。
 
 ```bash
 cd go-app
@@ -176,6 +180,17 @@ go test ./...
 # ローカル起動
 PORT=3002 DATABASE_URL=postgresql://todouser:todopass@localhost:5432/tododb \\
   go run ./cmd/server
+```
+
+### Rust (axum + sqlx) 版
+
+同じ PostgreSQL の `todos` テーブルをそのまま利用します。compose では Rust アプリ本体に OTEL SDK を入れず、Beyla（eBPF）で HTTP/SQL を自動計装して Collector に送ります（Linux カーネル要件あり）。
+
+```bash
+cd rust-app
+export DATABASE_URL=postgresql://todouser:todopass@localhost:5432/tododb
+export PORT=3003
+cargo run
 ```
 
 ## 📁 プロジェクト構造
@@ -216,7 +231,13 @@ hello-otel/
 │   ├── internal/
 │   ├── Dockerfile
 │   └── .env.example
+├── rust-app/                # Rust (axum + sqlx) 版 API（Beylaで自動計装）
+│   ├── src/
+│   ├── Cargo.toml
+│   ├── Dockerfile
+│   └── README.md
 ├── k6/                      # k6 テストスクリプト
+├── beyla/                   # Beyla(eBPF) 設定
 ├── collector.yaml               # spanmetrics 用 OTEL Collector 設定
 ├── docker-compose.yml           # アプリ/観測基盤構成
 ├── grafana-dashboard-todo.json  # Todo API用 Grafana Dashboard (importして利用)
