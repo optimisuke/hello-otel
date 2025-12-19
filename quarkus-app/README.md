@@ -17,6 +17,10 @@ DATABASE_USERNAME=todouser DATABASE_PASSWORD=todopass \
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 OTEL_SERVICE_NAME=todo-api-quarkus \
 java -jar target/*-runner.jar
+
+# 開発モード（ホットリロード）
+mvn quarkus:dev
+# 保存ごとに再コンパイル・再デプロイされます。ポート変更は -Dquarkus.http.port=8081 などで上書き。
 ```
 
 ## エンドポイント
