@@ -154,6 +154,32 @@ services:
     networks:
       - observability
 
+  # Quarkus Application
+  quarkus-api:
+    build:
+      context: ./quarkus-app
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - DATABASE_JDBC_URL=jdbc:postgresql://postgres:5432/tododb
+      - DATABASE_USERNAME=todouser
+      - DATABASE_PASSWORD=todopass
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_SERVICE_NAME=todo-api-quarkus
+      - DEPLOYMENT_ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lgtm:
+        condition: service_started
+      collector:
+        condition: service_started
+    networks:
+      - observability
+
   # k6 load test (profile: testing)
   k6:
     image: grafana/k6:0.54.0

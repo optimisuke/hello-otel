@@ -59,6 +59,7 @@ Thumbs.db
 
 # Java/Maven
 spring-app/target/
+quarkus-app/target/
 
 # Testing
 .pytest_cache/

@@ -84,6 +84,7 @@ Node 版（Express）は同じ `todos` テーブルを利用するため、Prism
 | **API Docs** | http://localhost:8000/docs | Swagger UI             |
 | **API (Node)** | http://localhost:3001      | Express + TypeScript 版 Todo API |
 | **API (Spring)** | http://localhost:8080      | Spring Boot 版 Todo API |
+| **API (Quarkus)** | http://localhost:8081      | Quarkus 版 Todo API |
 | **API (Go)** | http://localhost:3002      | chi + sqlx 版 Todo API |
 | **API (Rust)** | http://localhost:3003      | axum + sqlx 版 Todo API |
 | **Grafana**  | http://localhost:3000      | 統合ダッシュボード     |
@@ -184,6 +185,26 @@ docker-compose up -d spring-api
 # GET/POST/PUT/DELETE http://localhost:8080/api/v1/todos
 ```
 
+### Quarkus 版
+
+同じ `todos` テーブルを利用する Quarkus (RESTEasy Reactive + Hibernate ORM) 版です。マイグレーションは行いません。Quarkus OTEL 拡張で OTLP にトレース/メトリクス/ログを送ります。
+
+```bash
+cd quarkus-app
+cp .env.example .env
+mvn -B -DskipTests package
+
+# ローカル実行
+PORT=8081 DATABASE_JDBC_URL=jdbc:postgresql://localhost:5432/tododb \
+DATABASE_USERNAME=todouser DATABASE_PASSWORD=todopass \
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+java -jar target/*-runner.jar
+
+# Docker Compose から
+docker-compose build quarkus-api
+docker-compose up -d quarkus-api
+```
+
 ### Go (chi + sqlx + pgx) 版
 
 同じ PostgreSQL の `todos` テーブルをそのまま利用します。Docker ビルド時に Loongsuite の `otel go build` で自動計装したバイナリを生成します（トレース/メトリクス）。ログは stdout に加えてファイルにも出力でき、compose では Collector の filelog receiver で Loki に送ります。
@@ -240,6 +261,11 @@ hello-otel/
 │   ├── package.json
 │   └── .env.example
 ├── spring-app/              # Spring Boot + Maven 版 API（OTEL Java Agent）
+│   ├── src/
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── .env.example
+├── quarkus-app/             # Quarkus (RESTEasy Reactive + OTEL) 版 API
 │   ├── src/
 │   ├── pom.xml
 │   ├── Dockerfile
