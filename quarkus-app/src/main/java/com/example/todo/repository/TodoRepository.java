@@ -1,8 +1,9 @@
-package com.example.todo;
+package com.example.todo.repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
+import com.example.todo.model.TodoEntity;
 import java.util.List;
 import java.util.UUID;
 

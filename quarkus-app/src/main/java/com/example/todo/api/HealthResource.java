@@ -1,4 +1,4 @@
-package com.example.todo;
+package com.example.todo.api;
 
 import io.smallrye.common.annotation.NonBlocking;
 import jakarta.inject.Inject;

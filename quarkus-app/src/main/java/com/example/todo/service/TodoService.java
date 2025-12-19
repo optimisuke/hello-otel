@@ -1,9 +1,14 @@
-package com.example.todo;
+package com.example.todo.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
+import com.example.todo.dto.CreateTodoRequest;
+import com.example.todo.dto.TodoResponse;
+import com.example.todo.dto.UpdateTodoRequest;
+import com.example.todo.model.TodoEntity;
+import com.example.todo.repository.TodoRepository;
 import java.util.List;
 import java.util.UUID;
 

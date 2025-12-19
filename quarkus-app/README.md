@@ -30,11 +30,19 @@ java -jar target/*-runner.jar
 
 リクエスト/レスポンスのキーは `snake_case`（例: `created_at`）です。
 
-## コード概要
+## コード概要（パッケージ）
 
-- `TodoEntity`: `todos` テーブルをマッピングした Hibernate/Panache エンティティ（UUID 主キー、snake_case カラム対応）。
-- `TodoRepository`: PanacheRepositoryBase でクエリを集約（作成日時の降順でページング取得）。
-- `TodoService`: CRUD のドメインロジック。存在しない ID で 404 を返し、null の completed を false として作成。
-- `TodoResource`: REST エンドポイント（`/api/v1/todos`）。入力バリデーション、400/404/201/204 をハンドリング。
-- `ValidationExceptionMapper` / `BadRequestExceptionMapper`: バリデーション/不正リクエストのレスポンスを整形。
-- `HealthResource`: `/health` で疎通確認。
+- `model/TodoEntity`: `todos` テーブルをマッピングした Hibernate/Panache エンティティ（UUID 主キー、snake_case カラム対応）。
+- `repository/TodoRepository`: PanacheRepositoryBase でクエリを集約（作成日時の降順でページング取得）。
+- `service/TodoService`: CRUD のドメインロジック。存在しない ID で 404 を返し、null の completed を false として作成。
+- `dto/*`: リクエスト/レスポンス DTO（snake_case にシリアライズ）。
+- `api/TodoResource`: `/api/v1/todos` の REST エンドポイント。入力バリデーション、400/404/201/204 をハンドリング。
+- `api/HealthResource`: `/health` の疎通確認。
+- `exception/*Mapper`: バリデーションや不正リクエスト時のレスポンス整形。
+
+### Quarkus の動き（エントリ/ルーティング/DI）
+
+- `mvn package` 時に Quarkus が `*-runner.jar` にエントリポイント (`io.quarkus.runner.GeneratedMain`) を自動生成。`java -jar ...-runner.jar` でそこから起動。
+- ルーティングは JAX-RS アノテーションで定義（`@Path`/`@GET`/`@POST` など）。別途ルータークラスは不要。
+- DI は CDI (Arc) が `@Inject` で配線。Resource → Service → Repository の依存はコード上のアノテーションだけで解決。
+- 設定は `application.properties` に集約 (`quarkus.http.*`, `quarkus.datasource.*`, `quarkus.otel.*` など)。

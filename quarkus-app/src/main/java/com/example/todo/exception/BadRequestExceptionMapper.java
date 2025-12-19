@@ -1,4 +1,4 @@
-package com.example.todo;
+package com.example.todo.exception;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

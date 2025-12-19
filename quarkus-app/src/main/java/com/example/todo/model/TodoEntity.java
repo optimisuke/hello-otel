@@ -1,4 +1,4 @@
-package com.example.todo;
+package com.example.todo.model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;

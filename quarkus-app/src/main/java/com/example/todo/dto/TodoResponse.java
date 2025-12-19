@@ -1,4 +1,4 @@
-package com.example.todo;
+package com.example.todo.dto;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

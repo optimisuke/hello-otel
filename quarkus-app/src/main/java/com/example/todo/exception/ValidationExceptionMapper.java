@@ -1,4 +1,4 @@
-package com.example.todo;
+package com.example.todo.exception;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
