@@ -200,6 +200,22 @@ DATABASE_USERNAME=todouser DATABASE_PASSWORD=todopass \
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 java -jar target/*-runner.jar
 
+# Quarkus 拡張でコンテナイメージをビルド（Docker 必須）
+# ネイティブ版イメージをビルド（todo-api-quarkus:native）
+mvn -DskipTests \
+  -Dquarkus.package.type=native \
+  -Dquarkus.native.container-build=true \
+  -Dquarkus.container-image.build=true \
+  -Dquarkus.container-image.builder=docker \
+  -Dquarkus.container-image.registry=localhost \
+  -Dquarkus.container-image.group=todogroup \
+  -Dquarkus.container-image.name=todo-api-quarkus \
+  -Dquarkus.container-image.tag=native \
+  package
+
+# docker-compose から起動（イメージ作成後）
+docker-compose up -d quarkus-api
+
 # Docker Compose から
 docker-compose build quarkus-api
 docker-compose up -d quarkus-api

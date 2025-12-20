@@ -156,9 +156,7 @@ services:
 
   # Quarkus Application
   quarkus-api:
-    build:
-      context: ./quarkus-app
-      dockerfile: Dockerfile
+    image: localhost/todogroup/todo-api-quarkus:native
     ports:
       - "8081:8081"
     environment:

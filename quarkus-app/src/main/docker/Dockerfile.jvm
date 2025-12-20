@@ -1,0 +1,6 @@
+FROM eclipse-temurin:21-jre
+WORKDIR /work/
+ENV PORT=8081
+COPY target/*-runner.jar /work/app.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "/work/app.jar"]
