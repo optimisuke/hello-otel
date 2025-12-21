@@ -59,9 +59,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-opentelemetry-exporter-otlp</artifactId>
     </dependency>
+    <!-- JDBC span を出すために必要 -->
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-opentelemetry-exporter-otlp</artifactId>
+      <groupId>io.opentelemetry.instrumentation</groupId>
+      <artifactId>opentelemetry-jdbc</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
